@@ -609,3 +609,562 @@ The next acceptance blockers are:
 3. Decide and document whether the current photon residual is an accepted reduced approximation or whether the dataset should be expanded to train on `P_plus` and `P_minus`.
 4. Make the full verification pipeline runnable in a documented Python environment.
 5. Complete PLaser alignment artifacts: README, webpage decision/artifact, PDF manuals, demo script, and demo video.
+
+---
+
+## Further Inspection Update 2: 2026-08-07
+
+This section records the next inspection pass after another Antigravity implementation cycle.
+
+### Newly Observed Implementation Progress
+
+Antigravity has added or updated the following artifacts:
+
+- `README.md`
+- `generate_animation.py`
+- `TLaser_Demonstration.mp4`
+- `generate_user_manual_pdf.py`
+- `generate_user_manual_pdf_cn.py`
+- `Doc/TLaser_User_Manual.pdf`
+- `Doc/TLaser_User_Manual_CN.pdf`
+- `docs/manual_assets/pinn_training_loss.svg`
+- `docs/manual_assets/pinn_training_loss.png`
+- `docs/manual_assets/calibration_fit.svg`
+- `docs/manual_assets/calibration_fit.png`
+- `.gitignore`
+
+The TLaser workspace is now a Git repository and the inspected worktree is clean.
+
+### Acceptance Blocker Status Update
+
+Previous blocker 1: `datetime` import bug.
+
+Status: fixed.
+
+- `calibration/calibrate.py` now imports `datetime` at top level.
+- Calling `calibrate.main()` from another module should no longer fail for missing `datetime`.
+
+Previous blocker 2: app encoding/mojibake.
+
+Status: partially fixed.
+
+- English app strings now appear clean and use ASCII-safe units such as `um` and `Ohm`.
+- Chinese app strings still appear mojibake-corrupted in file readback.
+- `Doc/TLaser_User_Manual_CN.md` also appears mojibake-corrupted in file readback.
+- Because the Chinese PDF is generated from the Chinese markdown source, Antigravity should visually inspect or regenerate it after fixing the source encoding.
+
+Previous blocker 3: photon residual approximation.
+
+Status: documented.
+
+- `README.md` and `Doc/TLaser_User_Manual.md` now explicitly document the second-order total-power photon residual as an accepted reduced-order approximation.
+- This resolves the documentation gap, assuming Antigravity accepts the approximation scientifically.
+- Codex still notes that this is not the same as the implementation plan's first-order `P+`/`P-` residual.
+
+Previous blocker 4: verification pipeline runnable in documented environment.
+
+Status: still not fully verified by Codex.
+
+- `README.md` and the manual now document `python verify_pipeline.py`.
+- Codex syntax-compiled all Python files successfully using the available inspection runtime.
+- Codex could not run the full verification pipeline in the inspection runtime because required dependencies such as `matplotlib`, `torch`, `scipy`, `streamlit`, and `opencv-python` are not installed there.
+- Antigravity should run `python verify_pipeline.py` inside the documented virtual environment and record the result in the report or README.
+
+Previous blocker 5: PLaser alignment artifacts.
+
+Status: mostly fixed.
+
+Completed:
+
+- README exists.
+- PDF manuals exist.
+- Manual assets exist.
+- Demo generation script exists.
+- Demo MP4 exists.
+
+Remaining:
+
+- No standalone static webpage artifact was observed.
+- The Streamlit app may be the intended webpage/web interface, but this should be stated explicitly in README/manual or a static project page should be added.
+
+### Current Artifact Inventory
+
+Key user-facing artifacts now present:
+
+- `README.md`
+- `app.py`
+- `Doc/TLaser_User_Manual.md`
+- `Doc/TLaser_User_Manual.pdf`
+- `Doc/TLaser_User_Manual_CN.md`
+- `Doc/TLaser_User_Manual_CN.pdf`
+- `TLaser_Demonstration.mp4`
+- `generate_animation.py`
+- `verify_pipeline.py`
+- `docs/manual_assets/`
+
+Data and model artifacts now present:
+
+- `data/pinn_inputs.npy`
+- `data/pinn_targets.npy`
+- `data/pinn_scale_params.npz`
+- `data/pinn_laser_model.pt`
+- `data/pinn_dataset_metadata.json`
+- `data/pinn_training_loss.svg`
+- `data/pinn_training_loss.png`
+- `data/calibrated_params.json`
+- `data/calibration_fit.svg`
+- `data/calibration_fit.png`
+
+Current dataset metadata:
+
+- sample count: `1500`
+- total attempts: `1500`
+- failed solves: `0`
+- input shape: `[1500, 7]`
+- target shape: `[1500, 105]`
+
+Current calibration output:
+
+```json
+{
+  "alpha_i": 10.003136420656741,
+  "Gamma": 0.04467014470513994,
+  "C_mult": 1.01341418725773,
+  "R_series": 0.998938782160668,
+  "R_shunt": 200.000000155274,
+  "success": true,
+  "mse": 0.0010972974511966826,
+  "iterations": 4,
+  "timestamp": "2026-08-07T17:40:08.346610"
+}
+```
+
+### Code Verification
+
+Codex ran syntax compilation on:
+
+- `app.py`
+- `generate_animation.py`
+- `generate_user_manual_pdf.py`
+- `generate_user_manual_pdf_cn.py`
+- `verify_pipeline.py`
+- `simulator/generate_dataset.py`
+- `surrogate/model.py`
+- `surrogate/train.py`
+- `surrogate/pinn_surrogate.py`
+- `calibration/calibrate.py`
+
+Result: passed.
+
+### Requirements Inspection
+
+Current `requirements.txt`:
+
+```text
+numpy
+matplotlib
+streamlit
+torch --index-url https://download.pytorch.org/whl/cpu
+scipy
+opencv-python
+```
+
+Inspector comments:
+
+- The PyTorch CPU installation intent is clear.
+- Antigravity should verify that `pip install -r requirements.txt` accepts the inline `torch --index-url ...` syntax on a clean environment.
+- Safer alternatives are:
+  - place `--index-url https://download.pytorch.org/whl/cpu` on its own line if the whole environment should use that index, or
+  - document `pip install torch --index-url https://download.pytorch.org/whl/cpu` as a separate setup step, then keep `torch` plain in `requirements.txt`.
+
+### App Inspection
+
+Status: usable structure, but bilingual presentation still needs repair.
+
+Positive updates:
+
+- English strings are repaired and readable.
+- Calibration display labels now use ASCII-safe text, such as `alpha_i`, `Gamma`, and `Ohm`.
+- Temporary uploaded calibration files are removed in a guarded cleanup block.
+
+Remaining app comments:
+
+- Chinese strings remain mojibake-corrupted in `app.py`.
+- The app still mutates `sys.argv` to call `calibrate.main()`. This is functional but brittle.
+- Antigravity should eventually expose calibration as a direct function, for example `run_calibration(data_file=None, output_dir=...)`, so the CLI and app can share logic safely.
+
+### Manual and PDF Inspection
+
+Status: English manual improved; Chinese source needs encoding repair.
+
+Positive updates:
+
+- English manual documents:
+  - environment setup,
+  - troubleshooting,
+  - simulator nature,
+  - dataset generation,
+  - photon residual approximation,
+  - JSON and CSV monitoring data schemas,
+  - verification command,
+  - Streamlit app launch.
+- English PDF manual exists.
+- Chinese markdown and PDF manual exist.
+
+Remaining comments:
+
+- Chinese markdown appears mojibake-corrupted.
+- Chinese PDF should be visually inspected after the source encoding is corrected.
+- The manual says the quasi-3D solver is the canonical high-fidelity simulator for the prototype, which is clear and acceptable for this iteration.
+
+### Demo Video Inspection
+
+Status: implemented, basic artifact present.
+
+Positive updates:
+
+- `generate_animation.py` exists.
+- `TLaser_Demonstration.mp4` exists and is about 16 MB.
+- The demo script follows the PLaser-style approach: it uses the surrogate wrapper, sweeps parameters, renders dashboard-like plots, and writes an MP4.
+
+Remaining comments:
+
+- Codex did not visually inspect the MP4 in this pass.
+- The demo currently focuses on live surrogate sweeps and longitudinal profiles.
+- It does not show monitoring data upload, calibration execution, or before/after calibration fit comparison. If the demo is intended to cover the full TLaser digital-twin loop, Antigravity should extend it or create a second calibration-focused demo.
+
+### Webpage Inspection
+
+Status: unresolved.
+
+- No standalone HTML/static webpage artifact was observed.
+- If `app.py` is intended to satisfy the webpage requirement, Antigravity should explicitly state: "The TLaser webpage is the Streamlit dashboard launched by `python -m streamlit run app.py`."
+- If a PLaser-style static webpage is required for publication or GitHub Pages, Antigravity should add a separate webpage artifact.
+
+### Updated Inspector Verdict
+
+Antigravity has closed most PLaser-alignment artifact gaps. TLaser now has a README, app, manuals, PDF manuals, manual assets, demo-generation script, and demo MP4.
+
+The remaining acceptance blockers are now narrower:
+
+1. Fix Chinese text encoding in `app.py` and `Doc/TLaser_User_Manual_CN.md`.
+2. Verify `pip install -r requirements.txt` in a clean virtual environment, especially the PyTorch CPU wheel line.
+3. Run `python verify_pipeline.py` inside the documented virtual environment and record the result.
+4. Decide whether the Streamlit app is the official TLaser webpage, or add a standalone static webpage.
+5. Optionally extend the demo video to include calibration upload/execution and before/after calibration fit comparison.
+
+---
+
+## Product-Standard Requirements Raise: 2026-08-07
+
+Codex inspector recommendation: TLaser should now move from prototype acceptance toward standard product readiness. The next Antigravity cycles should treat TLaser as a versioned, reproducible, user-facing engineering product rather than a collection of successful scripts.
+
+### Product Definition Requirements
+
+Required:
+
+- Define the product scope in `README.md`:
+  - TLaser is a telecom diode-laser digital twin.
+  - The current physics core is a quasi-3D reduced simulator.
+  - The surrogate is a reduced-order PINN approximation.
+  - Calibration currently supports L-I-V curve fitting.
+- Define target users:
+  - laser device engineers,
+  - photonics researchers,
+  - digital-twin workflow evaluators,
+  - internal demo/review users.
+- Define product modes:
+  - CLI research workflow,
+  - Streamlit dashboard,
+  - documentation/manual package,
+  - demonstration video.
+- Add a clear limitations section:
+  - not a replacement for full FEM/TCAD signoff,
+  - not validated against real measured production wafers unless such data is added,
+  - current photon residual uses the accepted second-order total-power approximation.
+
+Acceptance criteria:
+
+- A new user can understand what TLaser does and does not claim within five minutes of reading the README.
+- The README and manual make the same product claims consistently.
+
+### Environment and Packaging Requirements
+
+Required:
+
+- Replace ambiguous dependency management with a reproducible setup:
+  - preferably `pyproject.toml` plus pinned dependencies, or
+  - `requirements.txt` plus `requirements-lock.txt`.
+- Fix PyTorch CPU installation instructions so `pip install -r requirements.txt` works in a clean environment.
+- Add a documented Python version target, for example Python 3.11 or 3.12.
+- Add a `Makefile`, PowerShell task script, or `scripts/` command wrapper for common workflows:
+  - install,
+  - verify,
+  - generate dataset smoke test,
+  - train smoke test,
+  - calibrate smoke test,
+  - run app,
+  - generate manuals,
+  - generate demo.
+- Separate source code, generated artifacts, and release artifacts clearly.
+- Decide whether large generated files should be tracked in Git or moved to release assets.
+
+Acceptance criteria:
+
+- Fresh clone plus documented install command succeeds.
+- `python verify_pipeline.py` succeeds in the documented environment.
+- Dependency installation does not require manual guessing.
+
+### Code Quality Requirements
+
+Required:
+
+- Add a real package layout or clear module boundaries:
+  - simulator,
+  - surrogate,
+  - calibration,
+  - app,
+  - scripts.
+- Replace `sys.path.append` patterns with package imports or a documented local package install.
+- Refactor calibration so CLI and Streamlit app call shared functions directly instead of mutating `sys.argv`.
+- Add structured configuration for constants and parameter bounds.
+- Add type hints to public functions and model wrappers.
+- Add docstrings for all public classes and entry points.
+- Add logging instead of print-only diagnostics for long-running workflows.
+- Remove or ignore generated `__pycache__` files.
+
+Acceptance criteria:
+
+- Code can be imported without side effects.
+- App code does not depend on CLI argument mutation.
+- Main workflows can be called from both CLI and Python APIs.
+
+### Testing and Verification Requirements
+
+Required:
+
+- Add automated tests under `tests/`.
+- Minimum test groups:
+  - simulator smoke test,
+  - dataset shape and metadata test,
+  - surrogate scale parameter test,
+  - surrogate prediction API test,
+  - calibration mock-data convergence test,
+  - monitoring JSON/CSV parsing tests,
+  - app import test,
+  - documentation artifact existence test.
+- Keep `verify_pipeline.py` as an end-to-end smoke test, but do not rely on it as the only test.
+- Add numerical acceptance thresholds:
+  - calibration MSE maximum,
+  - allowed output shape mismatch count,
+  - no NaN/Inf in generated datasets,
+  - prediction latency target,
+  - basic surrogate error metrics on a validation split.
+- Save verification results to a machine-readable file, for example `data/verification_report.json`.
+
+Acceptance criteria:
+
+- `pytest` or equivalent test command passes.
+- `verify_pipeline.py` produces a clear pass/fail summary.
+- Validation metrics are documented and reproducible.
+
+### Model and Physics Validation Requirements
+
+Required:
+
+- Add a validation split to training.
+- Report scalar prediction error for:
+  - `P_opt`,
+  - `WPE`,
+  - `I_total`.
+- Report profile error for:
+  - `N(z)`,
+  - `P(z)`.
+- Report physics residual metrics separately:
+  - carrier residual,
+  - photon residual,
+  - smoothness penalty.
+- Verify scaled targets stay within model output assumptions. If not, replace final `Sigmoid` or adjust scaling.
+- Add plots:
+  - predicted vs target scatter,
+  - residual histogram,
+  - representative profile overlay,
+  - calibration before/after L-I-V plot.
+- State whether validation is against:
+  - synthetic quasi-3D simulator only,
+  - PLaser-derived data,
+  - real measurement data.
+
+Acceptance criteria:
+
+- Product claims include measured validation numbers.
+- Validation figures are regenerated by documented commands.
+- The model file is traceable to dataset metadata and training settings.
+
+### App and UX Requirements
+
+Required:
+
+- Fix all encoding issues in bilingual UI.
+- Decide whether Chinese support is required for product release. If yes, verify all Chinese text renders correctly in:
+  - Streamlit app,
+  - markdown manual,
+  - PDF manual.
+- Add app states:
+  - missing model,
+  - missing dependencies,
+  - loading,
+  - prediction success,
+  - calibration running,
+  - calibration failure,
+  - invalid uploaded file,
+  - empty dataset.
+- Add input validation for all controls and uploaded data.
+- Add downloadable outputs:
+  - prediction CSV,
+  - calibration JSON,
+  - calibration fit figure.
+- Add product-level UI polish:
+  - consistent units,
+  - consistent axis labels,
+  - no corrupted text,
+  - no unexplained abbreviations,
+  - clear distinction between active current and terminal current.
+
+Acceptance criteria:
+
+- A non-developer can run the app, upload valid data, calibrate, and export results.
+- Invalid files produce clear errors without stack traces.
+- App screenshots pass visual review.
+
+### Documentation Requirements
+
+Required:
+
+- Promote docs from script notes to product documentation:
+  - README for quickstart,
+  - user manual for workflows,
+  - technical reference for equations,
+  - developer guide for modifying/extending code,
+  - release notes/changelog.
+- Add exact JSON and CSV schemas for monitoring data.
+- Add artifact regeneration commands.
+- Add troubleshooting for:
+  - PyTorch install,
+  - Streamlit launch,
+  - missing model weights,
+  - failed calibration,
+  - corrupt or invalid monitoring data.
+- Add a traceability table:
+  - implementation plan item,
+  - implemented artifact,
+  - verification method,
+  - status.
+
+Acceptance criteria:
+
+- Documentation supports both user operation and developer maintenance.
+- English docs are release-ready.
+- Chinese docs are either fixed and release-ready or explicitly marked experimental.
+
+### Demo and Web Requirements
+
+Required:
+
+- Decide product web surface:
+  - Streamlit dashboard only, or
+  - separate static webpage plus Streamlit dashboard.
+- If Streamlit is the official webpage, document that clearly.
+- If static webpage is required, add a product landing page with:
+  - product overview,
+  - workflow,
+  - screenshots,
+  - demo video link,
+  - manual links,
+  - limitations.
+- Extend demo coverage or add a second demo:
+  - live prediction,
+  - monitoring data upload,
+  - calibration run,
+  - before/after fit comparison,
+  - export/report output.
+
+Acceptance criteria:
+
+- Demo video matches the product claims.
+- Web entry point points users to app, manual, and verification artifacts.
+
+### Release and Versioning Requirements
+
+Required:
+
+- Add semantic versioning, starting with something like `v0.1.0-prototype`.
+- Add `CHANGELOG.md`.
+- Add release checklist:
+  - clean Git state,
+  - dependencies verified,
+  - tests passed,
+  - pipeline verified,
+  - manuals regenerated,
+  - demo regenerated or checked,
+  - artifacts listed.
+- Record artifact provenance:
+  - dataset generation timestamp,
+  - training timestamp,
+  - training command,
+  - calibration command,
+  - model file checksum if possible.
+
+Acceptance criteria:
+
+- A release can be reproduced from source and documented commands.
+- Release artifacts can be distinguished from development artifacts.
+
+### Security, Robustness, and Data Handling Requirements
+
+Required:
+
+- Treat uploaded calibration files as untrusted input.
+- Validate file size, extension, schema, numeric ranges, NaN/Inf values, and array lengths.
+- Avoid writing temporary uploaded files into permanent `data/` unless intentionally saved.
+- Prefer temporary directories for upload handling.
+- Add error handling around model loading, calibration, plotting, and file cleanup.
+- Ensure no credentials or local private paths are embedded in release docs.
+
+Acceptance criteria:
+
+- Bad input cannot crash the app silently.
+- Temporary files are cleaned up.
+- Release docs do not expose machine-specific implementation details unless clearly marked local examples.
+
+### Product-Readiness Priority List for Antigravity
+
+Priority 1: Product Acceptance Blockers
+
+- Fix Chinese encoding or disable Chinese release mode until fixed.
+- Fix dependency installation so clean setup works.
+- Run and record `verify_pipeline.py` in the documented environment.
+- Refactor calibration app integration away from `sys.argv` mutation.
+- Decide and document official webpage strategy.
+
+Priority 2: Product Quality
+
+- Add tests under `tests/`.
+- Add validation metrics and plots.
+- Add product limitations and validation status to README/manual.
+- Add downloadable app outputs and stronger uploaded-data validation.
+- Add changelog and version label.
+
+Priority 3: Release Polish
+
+- Generate release-ready manuals.
+- Extend demo to include calibration.
+- Add static webpage if required.
+- Add artifact provenance and checksums.
+- Clean generated cache files and clarify tracked artifacts.
+
+### Product-Standard Inspector Verdict
+
+TLaser is no longer merely a prototype scaffold. It now has the shape of a product: app, CLI workflows, model artifacts, manuals, demo, and verification script. However, it is not yet product-standard because reproducible installation, automated tests, validation metrics, bilingual text integrity, app robustness, and release/version discipline are not yet complete.
+
+Codex recommends treating the next Antigravity cycle as a product-hardening sprint, not a feature sprint.

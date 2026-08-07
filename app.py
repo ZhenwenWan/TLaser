@@ -179,6 +179,30 @@ if model_loaded:
         st.write(txt["calib_desc"])
         
         cal_path = APP_DIR / "data" / "calibrated_params.json"
+        history_path = APP_DIR / "data" / "calibration_history.json"
+        
+        # 1. Download templates section
+        st.markdown("#### 📂 Download Monitored Data Templates")
+        csv_template = "Current_A,Voltage_V,Power_W\n0.05,1.02,0.005\n0.10,1.05,0.020\n0.15,1.08,0.040\n0.20,1.10,0.065\n0.25,1.13,0.090\n0.30,1.15,0.115\n0.35,1.18,0.140\n0.40,1.20,0.165"
+        json_template = json.dumps({
+            "current_A": [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40],
+            "voltage_V": [1.02, 1.05, 1.08, 1.10, 1.13, 1.15, 1.18, 1.20],
+            "optical_power_W": [0.005, 0.020, 0.040, 0.065, 0.090, 0.115, 0.140, 0.165],
+            "metadata": {
+                "R1": 0.90, "R2": 0.05, "L_um": 300.0, "T0": 298.0, "w_um": 2.8, "d_um": 0.342
+            }
+        }, indent=4)
+        
+        t_col1, t_col2 = st.columns(2)
+        with t_col1:
+            st.download_button("Download CSV Template", csv_template, "monitored_liv_template.csv", "text/csv")
+        with t_col2:
+            st.download_button("Download JSON Template", json_template, "monitored_liv_template.json", "application/json")
+            
+        st.markdown("---")
+        
+        # 2. Upload and Auto Calibration section
+        st.markdown("#### 🤖 Automated Parameter Calibration")
         uploaded_file = st.file_uploader("Upload monitored LIV data (.json/.csv)", type=["json", "csv"])
         
         if st.button(txt["calib_btn"]):
@@ -212,23 +236,144 @@ if model_loaded:
                             os.remove(data_file_arg)
                         except Exception:
                             pass
-                        
-        # Display Calibrated Parameter comparisons
-        if cal_path.exists():
-            with open(cal_path, "r") as f:
-                cal = json.load(f)
+                            
+        st.markdown("---")
+        
+        # 3. Interactive Manual Calibration fine-tuning
+        st.markdown("#### 🎚️ Manual Calibration Fine-Tuning Overlay")
+        enable_manual = st.checkbox("Enable Manual Slider Adjustment")
+        
+        if enable_manual:
+            col_m1, col_m2 = st.columns([1, 2])
+            with col_m1:
+                st.markdown("**Adjust Physical Twin Parameters:**")
+                m_alpha_i = st.slider("Internal Loss alpha_i (cm^-1)", 5.0, 20.0, 10.0, 0.1)
+                m_Gamma = st.slider("Confinement Factor Gamma", 0.03, 0.08, 0.05, 0.001)
+                m_C_mult = st.slider("Auger Multiplier C", 0.5, 3.0, 1.0, 0.05)
+                m_R_series = st.slider("Series Resistance Rs (Ohm)", 0.1, 3.0, 1.0, 0.05)
+                m_R_shunt = st.slider("Shunt Resistance Rsh (Ohm)", 50.0, 1000.0, 200.0, 10.0)
                 
-            st.markdown(f"### {txt['calib_metrics']}")
-            c1, c2, c3, c4, c5 = st.columns(5)
-            c1.metric("Internal Loss alpha_i (cm^-1)", f"{cal['alpha_i']:.4f}")
-            c2.metric("Confinement Factor Gamma", f"{cal['Gamma']:.5f}")
-            c3.metric("Auger Coefficient Mult.", f"{cal['C_mult']:.4f}")
-            c4.metric("Series Resistance Rs (Ohm)", f"{cal['R_series']:.4f}")
-            c5.metric("Shunt Resistance Rsh (Ohm)", f"{cal['R_shunt']:.2f}")
-            
-            st.markdown(f"### {txt['calib_chart_title']}")
-            fit_plot_path = APP_DIR / "data" / "calibration_fit.svg"
-            if fit_plot_path.exists():
-                st.image(str(fit_plot_path))
+            with col_m2:
+                # Simulate in real-time for visual override check
+                currents_sim = np.linspace(0.05, 0.40, 10)
+                # Static geometry
+                R1 = 0.90
+                R2 = 0.05
+                L_um = 300.0
+                T0 = 298.0
+                w_um = 2.8
+                d_um = 0.342
+                
+                P_sim, V_sim, _ = calibrate.simulate_liv(
+                    currents_sim, R1, R2, L_um, T0, w_um, d_um,
+                    m_alpha_i, m_Gamma, m_C_mult, m_R_series, m_R_shunt
+                )
+                
+                # Fetch baseline/monitored clean data
+                mon_currents, mon_P, mon_V, _ = calibrate.generate_mock_monitoring_data()
+                
+                fig_m, (ax_m1, ax_m2) = plt.subplots(1, 2, figsize=(11, 4.5), facecolor="#0d1117")
+                
+                # Power plot
+                ax_m1.scatter(mon_currents, mon_P * 1000.0, color="#ff7b72", marker="o", label="Monitored Data")
+                ax_m1.plot(currents_sim, P_sim * 1000.0, color="#64ffda", linewidth=2.5, label="Manual Slider Fit")
+                ax_m1.set_title("L-I Fit Comparison (Power)", color="white", fontsize=10, fontweight="bold")
+                ax_m1.set_xlabel("Current (A)", color="#8b949e", fontsize=8)
+                ax_m1.set_ylabel("Power (mW)", color="#8b949e", fontsize=8)
+                ax_m1.grid(True, linestyle="--", alpha=0.3, color="#555555")
+                ax_m1.set_facecolor("#172a45")
+                ax_m1.tick_params(colors="white")
+                ax_m1.legend(loc="upper left")
+                for spine in ax_m1.spines.values():
+                    spine.set_color("#30363d")
+                    
+                # Voltage plot
+                ax_m2.scatter(mon_currents, mon_V, color="#ff7b72", marker="o", label="Monitored Data")
+                ax_m2.plot(currents_sim, V_sim, color="#64ffda", linewidth=2.5, label="Manual Slider Fit")
+                ax_m2.set_title("V-I Fit Comparison (Voltage)", color="white", fontsize=10, fontweight="bold")
+                ax_m2.set_xlabel("Current (A)", color="#8b949e", fontsize=8)
+                ax_m2.set_ylabel("Voltage (V)", color="#8b949e", fontsize=8)
+                ax_m2.grid(True, linestyle="--", alpha=0.3, color="#555555")
+                ax_m2.set_facecolor("#172a45")
+                ax_m2.tick_params(colors="white")
+                ax_m2.legend(loc="upper left")
+                for spine in ax_m2.spines.values():
+                    spine.set_color("#30363d")
+                    
+                plt.tight_layout()
+                st.pyplot(fig_m)
+                
+        st.markdown("---")
+        
+        # 4. Display Calibrated Parameter comparisons & History
+        col_res1, col_res2 = st.columns([1, 1])
+        
+        with col_res1:
+            if cal_path.exists():
+                with open(cal_path, "r") as f:
+                    cal = json.load(f)
+                    
+                st.markdown(f"### {txt['calib_metrics']}")
+                st.write(f"**Last Calibration Run:** {cal.get('timestamp', 'N/A')}")
+                st.write(f"Internal Loss α_i: `{cal['alpha_i']:.4f} cm^-1`")
+                st.write(f"Confinement Factor Γ: `{cal['Gamma']:.5f}`")
+                st.write(f"Auger Multiplier C: `{cal['C_mult']:.4f}`")
+                st.write(f"Series Resistance Rs: `{cal['R_series']:.4f} Ω`")
+                st.write(f"Shunt Resistance Rsh: `{cal['R_shunt']:.2f} Ω`")
+                
+                st.markdown(f"### {txt['calib_chart_title']}")
+                fit_plot_path = APP_DIR / "data" / "calibration_fit.svg"
+                if fit_plot_path.exists():
+                    st.image(str(fit_plot_path))
+                    
+        with col_res2:
+            st.markdown("### 📈 Digital Twin Parameter Drift Trends")
+            if history_path.exists():
+                try:
+                    with open(history_path, "r") as f:
+                        hist = json.load(f)
+                    if isinstance(hist, list) and len(hist) > 0:
+                        runs = np.arange(1, len(hist) + 1)
+                        alphas = [r["alpha_i"] for r in hist]
+                        gammas = [r["Gamma"] for r in hist]
+                        c_mults = [r["C_mult"] for r in hist]
+                        r_ser = [r["R_series"] for r in hist]
+                        r_sh = [r["R_shunt"] for r in hist]
+                        
+                        fig_h, axs = plt.subplots(5, 1, figsize=(6, 9), facecolor="#0d1117")
+                        
+                        # Plot trend for each parameter
+                        axs[0].plot(runs, alphas, marker="o", color="#ff7b72", linewidth=2)
+                        axs[0].set_ylabel("alpha_i", color="white", fontsize=8)
+                        axs[0].set_title("Fitted Constants History", color="white", fontsize=10, fontweight="bold")
+                        
+                        axs[1].plot(runs, gammas, marker="s", color="#64ffda", linewidth=2)
+                        axs[1].set_ylabel("Gamma", color="white", fontsize=8)
+                        
+                        axs[2].plot(runs, c_mults, marker="^", color="#ffcc00", linewidth=2)
+                        axs[2].set_ylabel("C_mult", color="white", fontsize=8)
+                        
+                        axs[3].plot(runs, r_ser, marker="v", color="#ff33cc", linewidth=2)
+                        axs[3].set_ylabel("Rs (Ohm)", color="white", fontsize=8)
+                        
+                        axs[4].plot(runs, r_sh, marker="d", color="#58a6ff", linewidth=2)
+                        axs[4].set_ylabel("Rsh (Ohm)", color="white", fontsize=8)
+                        axs[4].set_xlabel("Calibration Run Index", color="white", fontsize=8)
+                        
+                        for ax in axs:
+                            ax.set_facecolor("#172a45")
+                            ax.tick_params(colors="#8b949e", labelsize=7)
+                            ax.grid(True, linestyle="--", alpha=0.2, color="#555555")
+                            for spine in ax.spines.values():
+                                spine.set_color("#30363d")
+                                
+                        plt.tight_layout()
+                        st.pyplot(fig_h)
+                    else:
+                        st.info("No calibration history entries available yet.")
+                except Exception as ex:
+                    st.error(f"Error rendering trend chart: {ex}")
+            else:
+                st.info("Run parameter calibration to begin tracking historical physical trends.")
 else:
     st.warning("Please verify that surrogate training has completed and saved model weights successfully.")

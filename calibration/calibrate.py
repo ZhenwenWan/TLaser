@@ -138,7 +138,16 @@ def main():
         print("No monitoring dataset supplied. Generating mock monitoring dataset with noise...")
         currents, P_mon, V_mon, meta = generate_mock_monitoring_data()
         
-    print(f"  Monitored points: {len(currents)}")
+    # Outlier/Invalid Data Filtering
+    valid_mask = (currents > 0) & (P_mon >= 0) & (V_mon > 0)
+    dropped_count = len(currents) - np.sum(valid_mask)
+    if dropped_count > 0:
+        print(f"  [WARNING] Dropped {dropped_count} invalid measurement points (non-positive current/voltage or negative power).")
+        currents = currents[valid_mask]
+        P_mon = P_mon[valid_mask]
+        V_mon = V_mon[valid_mask]
+        
+    print(f"  Monitored points (after filtering): {len(currents)}")
     print(f"  Laser geometry:  L={meta['L_um']}um, w={meta['w_um']}um, d={meta['d_um']}um")
     
     # Parameters to calibrate: [alpha_i, Gamma, C_mult, R_series, R_shunt]
@@ -195,6 +204,28 @@ def main():
         json.dump(calibrated_data, f, indent=4)
         
     print(f"\nCalibrated parameters saved to {output_dir}/calibrated_params.json")
+    
+    # Append to calibration history log
+    history_path = output_dir / "calibration_history.json"
+    history_list = []
+    if history_path.exists():
+        try:
+            with open(history_path, "r") as f:
+                history_list = json.load(f)
+                if not isinstance(history_list, list):
+                    history_list = []
+        except Exception:
+            history_list = []
+            
+    history_list.append(calibrated_data)
+    # Limit history list to last 50 entries to keep it token efficient
+    history_list = history_list[-50:]
+    try:
+        with open(history_path, "w") as f:
+            json.dump(history_list, f, indent=4)
+        print(f"Calibration history updated in {history_path}")
+    except Exception as ex:
+        print(f"Warning: Failed to write to calibration history log: {ex}")
     
     # Diagnostic Output
     print("\n=== CALIBRATION RESULTS ===")
