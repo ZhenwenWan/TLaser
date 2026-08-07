@@ -1,0 +1,50 @@
+{
+    "generator": "TLaser/generate_dataset.py",
+    "timestamp": "2026-08-07T15:46:13.769398",
+    "seed": 42,
+    "smoke_test": false,
+    "sample_count": 1500,
+    "total_attempts": 1500,
+    "failed_solves": 0,
+    "failure_modes": {},
+    "parameter_ranges": {
+        "R1": [
+            0.1,
+            0.95
+        ],
+        "R2": [
+            0.05,
+            0.5
+        ],
+        "L_um": [
+            100.0,
+            1000.0
+        ],
+        "T0": [
+            250.0,
+            360.0
+        ],
+        "I_active": [
+            0.01,
+            0.5
+        ],
+        "w_active_um": [
+            1.5,
+            4.0
+        ],
+        "d_active_um": [
+            0.1,
+            0.5
+        ]
+    },
+    "shapes": {
+        "inputs": [
+            1500,
+            7
+        ],
+        "targets": [
+            1500,
+            105
+        ]
+    }
+}
