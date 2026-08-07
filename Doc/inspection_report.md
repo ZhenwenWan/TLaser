@@ -322,3 +322,290 @@ For each Antigravity implementation pass, Codex should focus review on:
 TLaser has a functional prototype skeleton for all three planned phases. Phase 1 is mostly complete for a synthetic quasi-3D workflow. Phase 2 and Phase 3 are present but incomplete relative to the implementation plan.
 
 The next most important implementation task is to complete the PINN training objective by adding the photon propagation residual, then add smoke-test controls so future Codex inspections can verify the full pipeline quickly and repeatably.
+
+---
+
+## Further Inspection Update: 2026-08-07
+
+This section records the next inspection pass after Antigravity implemented additional TLaser artifacts.
+
+### Newly Observed Implementation Progress
+
+Antigravity has added or updated the following items since the first inspection:
+
+- `requirements.txt`
+- `verify_pipeline.py`
+- `app.py`
+- `surrogate/pinn_surrogate.py`
+- updated `surrogate/train.py`
+- updated `simulator/generate_dataset.py`
+- updated `calibration/calibrate.py`
+- `Doc/TLaser_User_Manual.md`
+- `Doc/TLaser_User_Manual_CN.md`
+- `data/pinn_dataset_metadata.json`
+- `data/calibration_fit.svg`
+
+### Updated Status Against Previous Inspector Priorities
+
+Status: meaningful progress.
+
+Completed or partially completed items:
+
+- Project dependency file has been added.
+- Dataset generation now has CLI options and smoke-test mode.
+- Dataset metadata is now generated and includes sample count, seed, parameter ranges, output shapes, failure count, and failure modes.
+- Training now has CLI options and smoke-test mode.
+- Training now includes a photon residual term.
+- Training now reports final data, carrier, photon, and smoothness losses.
+- Calibration now has CLI options and smoke-test mode.
+- Calibration now supports external JSON/CSV monitoring data input.
+- Calibration now fits `C_mult` and explicit `R_shunt`.
+- Calibration now generates `calibration_fit.svg`.
+- A Streamlit TLaser app has been added.
+- English and Chinese manuals have been added.
+- A verification pipeline script has been added.
+- A surrogate wrapper has been added for model loading and prediction.
+
+### Verification Performed
+
+Codex ran Python syntax compilation on the updated Python files:
+
+- `app.py`
+- `simulator/generate_dataset.py`
+- `surrogate/model.py`
+- `surrogate/train.py`
+- `surrogate/pinn_surrogate.py`
+- `calibration/calibrate.py`
+- `verify_pipeline.py`
+
+Result: syntax compilation passed.
+
+Codex also attempted to run `verify_pipeline.py` with the available inspection runtime.
+
+Result: verification stopped at dependency import checks because the inspection runtime does not include `matplotlib`.
+
+Observed verifier output:
+
+```text
+[FAILED] Dependency import check failed: No module named 'matplotlib'
+Please run: pip install -r requirements.txt
+```
+
+Inspector comment:
+
+- This is an environment limitation of the current inspection runtime, not proof that the TLaser project environment is invalid.
+- The next implementation cycle should include an environment creation step or documented virtual environment path so Codex can run full verification reproducibly.
+
+### Phase 1 Updated Inspection
+
+Status: improved and mostly complete for the current synthetic simulator workflow.
+
+Positive updates:
+
+- `generate_dataset.py` now supports `--num-samples`, `--seed`, `--output-dir`, and `--smoke-test`.
+- Failures are now counted and summarized.
+- `pinn_dataset_metadata.json` exists and records a clean full run:
+  - sample count: `1500`
+  - total attempts: `1500`
+  - failed solves: `0`
+  - input shape: `[1500, 7]`
+  - target shape: `[1500, 105]`
+
+Remaining comments:
+
+- The simulator is still a synthetic quasi-3D solver, not a verified direct Elmer/FVM high-fidelity workflow.
+- Antigravity should add a short note in the manual and app saying whether this simulator is the canonical TLaser physics engine or a prototype stand-in.
+
+### Phase 2 Updated Inspection
+
+Status: improved but still needs technical review.
+
+Positive updates:
+
+- `train.py` now includes a photon residual term.
+- `train.py` now supports smoke-test training.
+- `train.py` now prints final loss components.
+- `surrogate/pinn_surrogate.py` now applies Savitzky-Golay smoothing during prediction post-processing.
+
+Inspector comments:
+
+- The implementation plan describes the photon propagation constraint as first-order forward/backward equations for `P+` and `P-`.
+- The current training implementation uses a second-order total-power approximation:
+  - `d2P/dz2 - (Gamma*g(z) - alpha_i)^2 * P(z) = 0`
+- This may be a useful approximation, but it is not the same as enforcing the planned first-order propagation residuals because the surrogate target only stores total `P(z)`, not separate `P_plus(z)` and `P_minus(z)`.
+- Antigravity should either:
+  - update the dataset target to include `P_plus` and `P_minus`, then implement the planned first-order residuals, or
+  - document the second-order total-power residual as an intentional reduced approximation.
+- The carrier residual still uses selected nodes rather than all 51 nodes. This is acceptable for speed, but should be documented.
+- `surrogate/model.py` still uses a final `Sigmoid`; Antigravity should verify scaled targets are within `[0, 1]` or change the output strategy.
+
+### Phase 3 Updated Inspection
+
+Status: improved but one app integration bug is likely present.
+
+Positive updates:
+
+- `calibrate.py` now fits:
+  - `alpha_i`
+  - `Gamma`
+  - `C_mult`
+  - `R_series`
+  - `R_shunt`
+- `calibrate.py` now supports `--data-file`.
+- `calibrate.py` now supports JSON and CSV input.
+- `calibration_fit.svg` exists.
+- Current `calibrated_params.json` includes the expanded parameter set and reports success.
+
+Current calibrated output:
+
+```json
+{
+  "alpha_i": 10.003136420656741,
+  "Gamma": 0.04467014470513994,
+  "C_mult": 1.01341418725773,
+  "R_series": 0.998938782160668,
+  "R_shunt": 200.000000155274,
+  "success": true,
+  "mse": 0.0010972974511966826,
+  "iterations": 4,
+  "timestamp": "2026-08-07T16:23:46.155910"
+}
+```
+
+Blocking inspector finding:
+
+- `calibration/calibrate.py` uses `datetime.now()` inside `main()`, but imports `datetime` only inside the `if __name__ == "__main__":` block.
+- Running `python calibration/calibrate.py` directly works because that import executes before `main()`.
+- Calling `calibrate.main()` from `app.py` likely fails with `NameError: name 'datetime' is not defined`.
+- Antigravity should move `from datetime import datetime` to the top-level imports in `calibration/calibrate.py`.
+
+Additional calibration comments:
+
+- The JSON input path expects arrays named `current_A`, `optical_power_W`, and `voltage_V`, with optional metadata.
+- The CSV input path assumes columns in the order current, voltage, optical power after one header row. This format should be documented in the manual.
+- The app temporarily writes uploaded files under `data/`. This is functional, but Antigravity should ensure failed calibration cannot leave temporary files behind in future error paths.
+
+### App Sync Inspection
+
+Status: implemented but needs repair before acceptance.
+
+Positive updates:
+
+- `app.py` exists and uses Streamlit.
+- The app exposes:
+  - live surrogate prediction,
+  - geometry and operating controls,
+  - scalar metrics,
+  - `N(z)` and `P(z)` plots,
+  - monitoring file upload,
+  - calibration trigger,
+  - calibrated parameter display,
+  - calibration fit plot display.
+
+Blocking inspector findings:
+
+- The app readback shows mojibake text in both English and Chinese UI strings, for example `âš¡`, `ðŸŒ`, `Î¼m`, and corrupted Chinese text.
+- Antigravity should repair the file encoding and verify the rendered Streamlit UI displays proper symbols and Chinese text.
+- Because of the `datetime` import issue in `calibrate.py`, the app's calibration button likely fails when it calls `calibrate.main()`.
+
+Recommended app fixes:
+
+- Save `app.py` explicitly as UTF-8.
+- Replace corrupted UI strings with valid text.
+- Prefer plain ASCII labels where symbols are not essential.
+- Move calibration execution into a callable function that accepts arguments directly instead of mutating `sys.argv`.
+- Add app startup guidance when dependencies, model weights, or scale parameters are missing.
+
+### PLaser Alignment Inspection
+
+Status: partial.
+
+PLaser reference artifacts observed locally:
+
+- `README.md`
+- `app.py`
+- `pinn_surrogate.py`
+- `generate_animation.py`
+- `PLaser_Demonstration.mp4`
+- `PLaser_User_Manual.md`
+- `PLaser_User_Manual_CN.md`
+- `PLaser_User_Manual.pdf`
+- `PLaser_User_Manual_CN.pdf`
+- `docs/manual_assets/*`
+- `docs/pinn_application_report.pdf`
+
+TLaser alignment progress:
+
+- TLaser now has a Streamlit app.
+- TLaser now has a surrogate wrapper.
+- TLaser now has English and Chinese manuals.
+- TLaser now has generated plot artifacts.
+
+Remaining PLaser alignment gaps:
+
+- No TLaser `README.md` was observed.
+- No TLaser static webpage or hosted webpage artifact was observed.
+- No TLaser demo video artifact was observed.
+- No TLaser demo generation script equivalent to PLaser `generate_animation.py` was observed.
+- No TLaser PDF manual was observed.
+- No TLaser manual asset folder equivalent to PLaser `docs/manual_assets/` was observed.
+
+Recommended PLaser-alignment next tasks:
+
+1. Add `README.md` for TLaser using PLaser's README structure, but with TLaser-specific digital-twin calibration content.
+2. Add a TLaser webpage artifact or clearly define the Streamlit app as the intended web interface.
+3. Add a TLaser demo script and then generate a demo video artifact.
+4. Generate PDF versions of the English and Chinese manuals.
+5. Add manual assets:
+   - workflow diagram,
+   - training loss figure,
+   - calibration fit figure,
+   - app screenshot,
+   - surrogate prediction profile example.
+
+### Manual Inspection
+
+Status: partial.
+
+Positive updates:
+
+- English and Chinese manuals exist.
+- The English manual covers setup, data generation, training, calibration, and app launch.
+
+Remaining comments:
+
+- The manual should document the exact external monitoring JSON and CSV schemas.
+- The manual should include the verification command `python verify_pipeline.py`.
+- The manual should explain the current photon residual approximation.
+- The manual should state that the current simulator is quasi-3D synthetic/reduced unless Antigravity confirms it is fully aligned with the Lasers/Elmer source.
+- The manual should include troubleshooting for dependency installation, PyTorch CPU wheel installation, and Streamlit model-load failures.
+
+### Demo Video Inspection
+
+Status: not implemented.
+
+No TLaser demo video or demo-generation script was observed.
+
+Recommended next action:
+
+- Implement `generate_demo_video.py` or an equivalent demo recording workflow following the PLaser `generate_animation.py` concept.
+- The demo should show:
+  - app launch,
+  - live surrogate prediction,
+  - profile visualization,
+  - monitoring data upload,
+  - calibration run,
+  - before/after fit plot,
+  - manual and webpage references.
+
+### Updated Inspector Verdict
+
+Antigravity has completed a strong second implementation pass. The most important previous gaps are now either addressed or partially addressed: dependency specification, smoke modes, metadata, expanded calibration, app, manuals, surrogate wrapper, and verification script.
+
+The next acceptance blockers are:
+
+1. Fix the `datetime` import bug in `calibration/calibrate.py`.
+2. Repair text encoding/mojibake in `app.py`.
+3. Decide and document whether the current photon residual is an accepted reduced approximation or whether the dataset should be expanded to train on `P_plus` and `P_minus`.
+4. Make the full verification pipeline runnable in a documented Python environment.
+5. Complete PLaser alignment artifacts: README, webpage decision/artifact, PDF manuals, demo script, and demo video.

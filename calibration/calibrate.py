@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
+from datetime import datetime
 from scipy.optimize import minimize
 
 # Add simulator folder to python path to import Quasi3DSimulator
@@ -256,5 +257,4 @@ def main():
     print(f"Calibration fit comparison plot successfully saved to {plot_path}")
 
 if __name__ == "__main__":
-    from datetime import datetime
     main()
