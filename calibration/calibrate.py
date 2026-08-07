@@ -253,8 +253,10 @@ def main():
     plt.tight_layout()
     plot_path = output_dir / "calibration_fit.svg"
     plt.savefig(plot_path, dpi=300, facecolor=fig.get_facecolor(), edgecolor="none")
+    plot_path_png = output_dir / "calibration_fit.png"
+    plt.savefig(plot_path_png, dpi=300, facecolor=fig.get_facecolor(), edgecolor="none")
     plt.close()
-    print(f"Calibration fit comparison plot successfully saved to {plot_path}")
+    print(f"Calibration fit comparison plot successfully saved to {plot_path} and {plot_path_png}")
 
 if __name__ == "__main__":
     main()

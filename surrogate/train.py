@@ -233,8 +233,10 @@ def main():
     
     plot_path = data_dir / "pinn_training_loss.svg"
     plt.savefig(plot_path, dpi=300, facecolor=plt.gcf().get_facecolor(), edgecolor="none")
+    plot_path_png = data_dir / "pinn_training_loss.png"
+    plt.savefig(plot_path_png, dpi=300, facecolor=plt.gcf().get_facecolor(), edgecolor="none")
     plt.close()
-    print(f"Saved training loss plot to {plot_path}")
+    print(f"Saved training loss plot to {plot_path} and {plot_path_png}")
 
 if __name__ == "__main__":
     main()
