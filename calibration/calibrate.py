@@ -99,12 +99,12 @@ def generate_mock_monitoring_data():
         "true_R_series": true_R_series, "true_R_shunt": true_R_shunt
     }
 
-def main():
+def main(args_list=None):
     parser = argparse.ArgumentParser(description="TLaser Digital Twin calibration solver.")
     parser.add_argument("--data-file", type=str, default=None, help="Path to JSON/CSV monitoring dataset")
     parser.add_argument("--smoke-test", action="store_true", help="Run 2 optimization iterations for rapid checks")
     parser.add_argument("--output-dir", type=str, default=None, help="Output directory to save fit parameters")
-    args = parser.parse_args()
+    args = parser.parse_args(args_list)
     
     current_dir = Path(__file__).resolve().parent
     output_dir = Path(args.output_dir) if args.output_dir else current_dir.parent / "data"

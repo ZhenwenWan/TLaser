@@ -215,22 +215,17 @@ if model_loaded:
                 else:
                     data_file_arg = None
                 
-                # Mutate sys.argv and call calibrate.main()
-                orig_argv = sys.argv
-                sys.argv = [
-                    "calibrate.py",
-                    "--output-dir", str(APP_DIR / "data")
-                ]
+                # Call calibrate.main() with arguments directly
+                args_list = ["--output-dir", str(APP_DIR / "data")]
                 if data_file_arg:
-                    sys.argv += ["--data-file", data_file_arg]
+                    args_list += ["--data-file", data_file_arg]
                     
                 try:
-                    calibrate.main()
+                    calibrate.main(args_list=args_list)
                     st.success(txt["calib_success"])
                 except Exception as ex:
                     st.error(f"Error during calibration: {ex}")
                 finally:
-                    sys.argv = orig_argv
                     if data_file_arg and os.path.exists(data_file_arg):
                         try:
                             os.remove(data_file_arg)

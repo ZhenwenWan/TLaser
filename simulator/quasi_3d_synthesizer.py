@@ -37,9 +37,9 @@ class Quasi3DSimulator:
         # Confinement factor
         self.Gamma = 0.05
         
-        # Cladding shunt leakage current density per unit length (A/cm)
-        # Total terminal current is I_active + I_shunt
-        self.I_shunt_unit = 486.678  # A/cm
+        # Default electrical parasitics for WPE calculations
+        self.R_shunt = 150.0        # Ohm
+        self.R_series = 0.85       # Ohm
         
         # Constants
         self.q0 = 1.60213377e-19
@@ -175,9 +175,14 @@ class Quasi3DSimulator:
         P_out_facet2 = P_plus[-1] * (1.0 - self.R2)
         P_opt = P_out_facet1 + P_out_facet2
         
-        I_total = (I_2d_unit + self.I_shunt_unit) * self.L_cavity
-        # Voltage bias baseline
-        V_bias = 1.0499
+        I_active = I_2d_unit * self.L_cavity
+        # Electrical junction voltage based on active current (same as calibration)
+        V_junction = 0.95 + 0.05 * math.log(max(I_active, 1e-9) / 1e-6 + 1.0)
+        I_shunt = V_junction / self.R_shunt
+        I_total = I_active + I_shunt
+        
+        # Terminal voltage and electrical power
+        V_bias = V_junction + I_total * self.R_series
         P_elec = I_total * V_bias
         wpe = P_opt / P_elec if P_elec > 0 else 0.0
         

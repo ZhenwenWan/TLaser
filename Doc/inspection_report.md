@@ -1168,3 +1168,303 @@ Priority 3: Release Polish
 TLaser is no longer merely a prototype scaffold. It now has the shape of a product: app, CLI workflows, model artifacts, manuals, demo, and verification script. However, it is not yet product-standard because reproducible installation, automated tests, validation metrics, bilingual text integrity, app robustness, and release/version discipline are not yet complete.
 
 Codex recommends treating the next Antigravity cycle as a product-hardening sprint, not a feature sprint.
+
+---
+
+## High-Fidelity Simulation and Data Quality Inspection: 2026-08-07
+
+User focus for this inspection pass: improve the high-fidelity simulation model and training-data quality.
+
+### Executive Finding
+
+The current simulator is useful as a reduced quasi-3D synthetic generator, but it should not yet be treated as a high-fidelity product-grade data source. The largest issue found in this pass is a concrete data-quality mismatch: the generated dataset contains `I_total` values up to about `49 A`, while `surrogate/train.py` scales `I_total` with an assumed maximum of `20 A`. Because `surrogate/model.py` uses a final `Sigmoid`, any scaled target above `1.0` cannot be represented faithfully by the model.
+
+This is an immediate product-blocking data-quality issue for the surrogate.
+
+### Dataset Quality Check Results
+
+Codex inspected the current generated dataset:
+
+```text
+inputs shape:  (1500, 7), float32
+targets shape: (1500, 105), float32
+inputs finite: true
+targets finite: true
+```
+
+Input ranges observed:
+
+```text
+R1:       min 0.100026, mean 0.523075, max 0.949069
+R2:       min 0.050185, mean 0.276415, max 0.499777
+L_cm:     min 0.010022, mean 0.054589, max 0.099960
+T0:       min 250.006, mean 303.471, max 359.913
+I_active: min 0.010006, mean 0.254286, max 0.499322
+w_cm:     min 1.5006e-4, mean 2.7189e-4, max 3.9987e-4
+d_cm:     min 1.0044e-5, mean 2.9732e-5, max 4.9989e-5
+```
+
+Output ranges observed:
+
+```text
+P_opt:  min 4.80e-7 W, mean 4.91e-3 W, max 1.73e-2 W
+WPE:    min 9.76e-9,   mean 2.48e-4,   max 2.72e-3
+I_total min 4.90 A,    mean 26.82 A,   max 49.00 A
+N(z):   min 4.48e17,   max 1.13e19
+P(z):   min 1.88e-6 W, max 2.47e-2 W
+```
+
+Scaler compatibility check:
+
+```text
+scaled target max: 2.4498
+scaled target values above 1.0: 1132
+negative scaled target values: 0
+```
+
+Inspector comments:
+
+- `I_total` values are the main cause of scaled target overflow.
+- `train.py` assumes `out_max[2] = 20.0` for `I_total`.
+- Current `I_total` reaches about `49.0`.
+- `model.py` uses a final `Sigmoid`, so scaled targets above `1.0` are outside the model output range.
+- This will bias the surrogate, especially current prediction and any coupled WPE/electrical interpretation.
+
+Immediate required action:
+
+- Fix scaling/model compatibility before further training is accepted.
+
+Options:
+
+1. Adjust `out_max[2]` based on dataset statistics plus margin, then retrain.
+2. Compute all output scaling from the generated dataset and save it in `pinn_scale_params.npz`.
+3. Remove the final `Sigmoid` and use a model/output transform that can represent values outside `[0, 1]`.
+4. Fix the simulator current model so `I_total` is physically realistic before regenerating the dataset.
+
+Codex recommends option 4 first, then option 2.
+
+### High-Fidelity Simulation Model Inspection
+
+Status: reduced synthetic model, not yet high-fidelity.
+
+Current implementation characteristics:
+
+- The simulator solves a longitudinal cavity problem with `P_plus`, `P_minus`, `N`, and gain arrays.
+- It uses a shooting method for mirror boundary conditions.
+- It solves the local carrier equation with a log-Newton method.
+- It integrates photon propagation with explicit Euler integration.
+- It uses simple temperature scaling laws for gain, transparency carrier density, and Auger recombination.
+- It uses fixed or globally assigned values for important device parameters such as `Gamma`, `alpha_i`, `I_shunt_unit`, `A`, `B`, `C`, `N_tr`, and gain coefficient.
+
+Main high-fidelity gaps:
+
+1. Transverse physics is not actually solved in TLaser.
+   - The file header says the model is coupled with baseline 2D transverse parameters from Elmer.
+   - No Elmer/FEM mesh, material solution, optical confinement calculation, thermal solution, or drift-diffusion import is present in TLaser.
+   - `Gamma` is fixed at `0.05` unless overwritten.
+
+2. Thermal model is only parametric.
+   - Temperature affects gain, transparency density, and Auger coefficient through simple scaling laws.
+   - There is no self-heating model coupled to current, voltage, thermal resistance, heat source distribution, or heatsink boundary condition.
+   - The simulator cannot yet capture spatial thermal gradients or thermal rollover mechanistically.
+
+3. Electrical model is too coarse.
+   - `I_total = (I_2d_unit + I_shunt_unit) * L_cavity`.
+   - With `I_shunt_unit = 486.678 A/cm`, cavity lengths up to `0.1 cm` create tens of amps of shunt current.
+   - This dominates the electrical metrics and pushes WPE to very small values.
+   - The simulator uses fixed `V_bias = 1.0499` for electrical power.
+
+4. Optical propagation uses explicit Euler.
+   - Euler integration is simple but low order and can introduce numerical bias in gain/loss propagation.
+   - A product-grade simulator should use a more stable and higher-order integration method, or at least verify grid convergence.
+
+5. Boundary-condition convergence is not reported in the dataset.
+   - The bisection shooting residual is used internally.
+   - The returned result does not include convergence flag, iteration count, final residual, or whether the bracket was valid.
+   - `generate_dataset.py` accepts all successful function returns without quality filtering.
+
+6. Dataset targets omit `P_plus` and `P_minus`.
+   - The simulator computes both fields.
+   - The dataset stores only total `P_profile = P_plus + P_minus`.
+   - This prevents training the planned first-order photon residual directly.
+
+7. Spontaneous emission and gain modeling are simplified.
+   - `beta_sp` is fixed.
+   - Gain is logarithmic and clamped nonnegative.
+   - Gain compression, spectral detuning, carrier-dependent refractive index, and linewidth-related effects are absent.
+
+### Data Generation Inspection
+
+Status: operational but not yet product-grade.
+
+Positive items:
+
+- CLI controls exist for sample count, seed, output directory, and smoke test.
+- Metadata records sample count, attempts, failures, parameter ranges, and array shapes.
+- Current full dataset has no NaN/Inf values.
+- Current generation run reports zero failed solves.
+
+Data-quality gaps:
+
+1. Sampling is uniform random only.
+   - Uniform random sampling is acceptable for a first pass.
+   - Product-grade surrogate training should use Latin Hypercube, Sobol, Halton, or stratified sampling for better coverage.
+
+2. No train/validation/test split metadata.
+   - The dataset file does not record split indices.
+   - There is no holdout set tied to a specific seed and dataset version.
+
+3. No output distribution summary in metadata.
+   - Metadata does not include min/mean/max/quantiles for inputs and outputs.
+   - The scaler mismatch would have been caught earlier if output statistics were saved automatically.
+
+4. No physical plausibility filters.
+   - Samples are accepted if the solver does not throw an exception.
+   - There are no acceptance checks for:
+     - positive finite values,
+     - plausible terminal current,
+     - plausible WPE,
+     - mirror-boundary residual,
+     - Newton convergence quality,
+     - monotonic or bounded power behavior,
+     - carrier-density range.
+
+5. No units schema.
+   - Inputs are stored in mixed units: `L`, `w`, and `d` are stored in cm, while metadata ranges are reported in microns.
+   - This is workable but should be explicitly encoded in metadata to avoid future misuse.
+
+6. Dataset is regenerated destructively.
+   - Current scripts overwrite `pinn_inputs.npy`, `pinn_targets.npy`, and metadata.
+   - Product-grade data generation should write versioned dataset directories or include dataset IDs.
+
+### Required Simulator Upgrades
+
+Priority 1: Fix physical/electrical realism and scaling.
+
+- Revisit `I_shunt_unit = 486.678 A/cm`.
+- Decide whether shunt current should be:
+  - removed from simulator dataset generation,
+  - modeled as a calibration-only parasitic,
+  - reduced to a physically justified scale,
+  - replaced with explicit `R_shunt` voltage-dependent leakage.
+- Replace fixed `V_bias` with a documented voltage model or move voltage/electrical parasitics into calibration.
+- Regenerate the dataset after fixing current model behavior.
+- Recompute output scaling from the regenerated dataset.
+
+Priority 2: Add solver quality outputs.
+
+- Return from `solve_longitudinal()`:
+  - `converged`,
+  - `shooting_iterations`,
+  - `shooting_residual`,
+  - `max_newton_iterations`,
+  - `newton_failure_count`,
+  - `min/max` sanity values,
+  - optional grid spacing and method version.
+- Store quality summaries in dataset metadata.
+- Reject or quarantine samples that fail quality checks.
+
+Priority 3: Improve numerical method.
+
+- Replace explicit Euler propagation with at least RK4 or a stable exponential segment update.
+- Add grid-convergence testing with `M = 51`, `101`, and `201`.
+- Record convergence error for representative operating points.
+- Add regression tests for solver stability.
+
+Priority 4: Improve physical model hierarchy.
+
+- Add parameterized 2D transverse lookup tables or imports:
+  - optical confinement factor `Gamma(w, d, T)`,
+  - effective index `n_eff(w, d, T)`,
+  - active-region overlap,
+  - thermal resistance or local temperature rise,
+  - series/shunt parasitic estimates.
+- If real Elmer/Lasers outputs are available, add an adapter that imports them into TLaser data generation.
+- Make the simulator state whether each sample used:
+  - analytic defaults,
+  - lookup-table transverse data,
+  - imported FEM data.
+
+Priority 5: Expand targets if first-order photon residual remains a goal.
+
+- Save `P_plus(z)` and `P_minus(z)` separately in `pinn_targets.npy`, or create a new target file schema.
+- Update model output dimensions accordingly.
+- Train direct first-order photon residuals:
+  - `dP_plus/dz - (Gamma*g - alpha_i)P_plus = source`,
+  - `dP_minus/dz + (Gamma*g - alpha_i)P_minus = source`.
+- Keep total `P(z)` as a derived output for app display.
+
+### Required Data Quality Upgrades
+
+Priority 1: Add dataset QA report.
+
+Create `data/dataset_quality_report.json` containing:
+
+- dataset ID,
+- generator git commit if available,
+- generation command,
+- timestamp,
+- random seed,
+- sample count,
+- parameter ranges and units,
+- input min/mean/max/quantiles,
+- output min/mean/max/quantiles,
+- NaN/Inf counts,
+- scaling overflow counts,
+- physical rejection counts,
+- solver convergence statistics.
+
+Priority 2: Add quality gates.
+
+Generation should fail or warn loudly if:
+
+- any NaN/Inf appears,
+- scaled target values exceed model range,
+- solver convergence fails,
+- `I_total` exceeds a chosen physical maximum,
+- WPE is outside a plausible range,
+- too many samples are below threshold or otherwise low-information,
+- output distribution is badly imbalanced.
+
+Priority 3: Improve sampling.
+
+- Add `--sampling uniform|lhs|sobol`.
+- Add edge/corner cases intentionally.
+- Add threshold-focused sampling around lasing transition.
+- Add calibration-focused sampling over parasitic and thermal drift parameters.
+- Add stratified current/temperature sampling so high-temperature and near-threshold behavior is not underrepresented.
+
+Priority 4: Version datasets.
+
+- Write datasets to `data/datasets/<dataset_id>/`.
+- Save `inputs.npy`, `targets.npy`, `metadata.json`, `quality_report.json`, and `scale_params.npz` together.
+- Store the active model's training dataset ID in model metadata.
+
+Priority 5: Add data visualizations.
+
+- Generate:
+  - input coverage plots,
+  - output histograms,
+  - P-I curves for selected geometries,
+  - WPE vs current/temperature,
+  - `N(z)` and `P(z)` envelopes,
+  - solver residual distributions.
+
+### Immediate Antigravity Task List
+
+1. Fix the simulator electrical current model so generated `I_total` is physically plausible.
+2. Regenerate dataset after that fix.
+3. Recompute scale parameters from dataset statistics.
+4. Add dataset quality report generation.
+5. Add quality gates for NaN/Inf, scaled overflow, solver convergence, and physical plausibility.
+6. Add solver convergence outputs to `Quasi3DSimulator.solve_longitudinal()`.
+7. Upgrade propagation integration from Euler to a higher-quality method or document grid-convergence evidence.
+8. Add `P_plus` and `P_minus` targets if first-order photon residual training is desired.
+9. Add sampling strategy control, starting with Latin Hypercube or Sobol.
+10. Document the simulator fidelity level honestly: reduced quasi-3D analytic/parametric, not full FEM/TCAD.
+
+### High-Fidelity/Data-Quality Inspector Verdict
+
+TLaser's current dataset is clean in the narrow sense that it is finite and generated without reported solver failures. But it is not yet high-quality product training data. The terminal-current scaling mismatch and physically questionable shunt-current model must be fixed before the surrogate can be considered reliable.
+
+Codex recommends that the next Antigravity cycle focus first on simulator current realism, dataset QA reporting, and scale/model compatibility before adding more UI or documentation features.

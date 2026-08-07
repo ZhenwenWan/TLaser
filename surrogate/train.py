@@ -54,17 +54,20 @@ def main():
     inputs = np.load(str(inputs_path))
     targets = np.load(str(targets_path))
     
-    # Scale inputs/targets
-    in_min = np.array([0.1, 0.05, 0.01, 250.0, 0.01, 1.5e-4, 1.0e-5], dtype=np.float32)
-    in_max = np.array([0.95, 0.5, 0.1, 360.0, 0.5, 4.0e-4, 5.0e-5], dtype=np.float32)
+    # Automatically compute mins and maxes from the generated dataset to prevent sigmoid saturation
+    in_min = inputs.min(axis=0)
+    in_max = inputs.max(axis=0)
+    # Add a small margin to max and subtract from min to prevent division by zero or exact boundary issues
+    in_min = in_min - 0.05 * (in_max - in_min + 1e-8)
+    in_max = in_max + 0.05 * (in_max - in_min + 1e-8)
     
-    out_min = np.zeros(105, dtype=np.float32)
-    out_max = np.ones(105, dtype=np.float32)
-    out_max[0] = 1.0      # P_opt max ~1W
-    out_max[1] = 0.5      # WPE max ~50%
-    out_max[2] = 20.0     # I_total max ~20A
-    out_max[3:54] = 1.0e19 # N profile max ~1e19
-    out_max[54:105] = 20.0 # P profile max ~20W
+    out_min = targets.min(axis=0)
+    out_max = targets.max(axis=0)
+    # Add a 10% safety margin to max and subtract from min
+    out_min = out_min - 0.05 * (out_max - out_min + 1e-8)
+    # Clamp out_min to 0 for outputs that should be strictly positive (power, wpe, current, etc)
+    out_min = np.clip(out_min, 0.0, None)
+    out_max = out_max + 0.05 * (out_max - out_min + 1e-8)
     
     # Save scale parameters for future client usage
     np.savez(
