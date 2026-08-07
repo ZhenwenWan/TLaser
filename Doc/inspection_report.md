@@ -1468,3 +1468,175 @@ Priority 5: Add data visualizations.
 TLaser's current dataset is clean in the narrow sense that it is finite and generated without reported solver failures. But it is not yet high-quality product training data. The terminal-current scaling mismatch and physically questionable shunt-current model must be fixed before the surrogate can be considered reliable.
 
 Codex recommends that the next Antigravity cycle focus first on simulator current realism, dataset QA reporting, and scale/model compatibility before adding more UI or documentation features.
+
+---
+
+## Mobile Screen Post Optimization Comment: 2026-08-07
+
+User focus: optimize the mobile-screen post/presentation for TLaser in documentation.
+
+### Inspector Comment
+
+TLaser currently has strong technical artifacts, but the documentation should include a mobile-friendly product post format. This is different from the full manual: the mobile post should communicate TLaser's value, workflow, and proof points in one vertical screen sequence without requiring the reader to inspect dense equations or desktop dashboard screenshots.
+
+### Recommended Mobile Post Format
+
+Use a vertical aspect ratio:
+
+- Primary: `1080 x 1920` for phone screens and video stories.
+- Secondary: `1080 x 1350` for feed-style posts.
+- Keep all text readable at phone size.
+- Avoid dense multi-column desktop screenshots.
+
+Recommended sequence:
+
+1. Cover screen
+   - Title: `TLaser`
+   - Subtitle: `Telecom Diode Laser Digital Twin`
+   - One-line value: `Simulate, predict, and calibrate L-I-V behavior in real time.`
+   - Visual: simplified laser-chip/digital-twin workflow or clean app screenshot crop.
+
+2. Problem screen
+   - Message: full physics simulation is accurate but too slow for interactive design and monitoring.
+   - Visual: `High-Fidelity Simulator -> Dataset -> PINN Twin -> Calibration`.
+
+3. Workflow screen
+   - Show the four product steps:
+     - Generate quasi-3D simulation data.
+     - Train PINN surrogate.
+     - Predict `P_opt`, `WPE`, `I_total`, `N(z)`, `P(z)`.
+     - Calibrate against L-I-V monitoring data.
+
+4. Dashboard screen
+   - Use a mobile crop of the Streamlit app.
+   - Prioritize:
+     - parameter controls,
+     - three scalar metrics,
+     - one clean profile plot.
+   - Do not show the full desktop layout squeezed onto mobile.
+
+5. Calibration screen
+   - Show before/after L-I-V fit.
+   - Use the `calibration_fit.png` asset, cropped or redrawn for mobile.
+   - Include fitted parameters only if they remain readable.
+
+6. Data quality screen
+   - Show dataset size, parameter range, and verification state.
+   - After Antigravity fixes the simulator/data-quality blockers, include:
+     - sample count,
+     - no NaN/Inf,
+     - solver convergence pass rate,
+     - scaling overflow count equals zero.
+
+7. Limitation/transparency screen
+   - State clearly:
+     - current simulator is reduced quasi-3D,
+     - not full FEM/TCAD signoff,
+     - validation status depends on synthetic or measured data availability.
+   - This builds trust and avoids overclaiming.
+
+8. Call-to-action screen
+   - `Run: python -m streamlit run app.py`
+   - Links or references:
+     - README,
+     - user manual,
+     - demo video,
+     - verification command.
+
+### Mobile Documentation Asset Requirements
+
+Antigravity should add a dedicated docs asset folder:
+
+- `docs/mobile_post/`
+
+Recommended files:
+
+- `cover.png`
+- `workflow.png`
+- `dashboard_mobile.png`
+- `calibration_mobile.png`
+- `data_quality_mobile.png`
+- `limitations.png`
+- `mobile_post_storyboard.md`
+
+The storyboard should describe:
+
+- image filename,
+- intended screen order,
+- headline,
+- body text,
+- source artifact,
+- regeneration command.
+
+### Design Requirements
+
+Required:
+
+- Use a consistent TLaser visual identity.
+- Use short headlines, ideally under 8 words.
+- Use body text under 25 words per screen.
+- Use large labels and high contrast.
+- Prefer one plot per screen.
+- Avoid raw terminal screenshots.
+- Avoid full equations except one compact physics-summary screen.
+- Use `um`, `Ohm`, `alpha_i`, and `Gamma` if encoding reliability is not guaranteed.
+- Do not use corrupted Chinese text in mobile assets.
+
+Recommended layout:
+
+- Top: title or status.
+- Middle: one visual.
+- Bottom: one sentence plus key metric.
+
+### Content Priority for Mobile
+
+Mobile post content should prioritize product clarity over implementation detail:
+
+High priority:
+
+- What TLaser does.
+- What input it takes.
+- What output it predicts.
+- What calibration improves.
+- What has been verified.
+
+Lower priority:
+
+- Full equations.
+- Internal Python file names.
+- Long parameter tables.
+- Dense training logs.
+
+### Mobile App Screenshot Guidance
+
+The current Streamlit app is desktop-oriented. For documentation screenshots:
+
+- Do not shrink the full app into a phone frame.
+- Capture separate narrow views:
+  - controls only,
+  - metrics only,
+  - profile plot only,
+  - calibration fit only.
+- If needed, create a documentation-only mobile mockup that faithfully represents app outputs without pretending the current app is fully mobile-native.
+
+### Product-Standard Acceptance Criteria
+
+Mobile documentation/post is acceptable when:
+
+- Every screen is readable on a phone without zooming.
+- No text overlaps plots or UI.
+- No corrupted encoding appears.
+- The post states TLaser's current fidelity honestly.
+- The calibration and dataset quality claims match verified artifacts.
+- The post points users to README/manual/demo for full details.
+
+### Immediate Antigravity Tasks
+
+1. Create `docs/mobile_post/mobile_post_storyboard.md`.
+2. Generate a `1080 x 1920` mobile workflow graphic.
+3. Create mobile crops or redraws of:
+   - dashboard prediction,
+   - calibration fit,
+   - training/data-quality summary.
+4. Add a short section in the manual: `Mobile Product Post Assets`.
+5. Ensure Chinese mobile assets are either fixed UTF-8 or omitted from release until encoding is solved.
