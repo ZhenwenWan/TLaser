@@ -11,6 +11,16 @@ TLaser creates a high-fidelity reduced-order digital twin of a telecom semicondu
 2. **Physics-Informed Neural Network (PINN)**: Maps 7D design parameters to 105D space arrays in under 5 milliseconds.
 3. **Monitored L-I-V Parameter Calibration**: Fits internal parameter drift against real-time measured Light-Current-Voltage curves.
 
+### 1.1 Engineering Mapping Storyline
+
+To clearly articulate TLaser's position in the industrial telecom photonics value chain, the platform maps a complete engineering path from products down to digital twin parameters:
+
+1. **Optical Module Level**: Standard SFP/QSFP transceivers plugged into network switches. System testing provides measured L-I-V (Light-Current-Voltage) curves.
+2. **Assembly Internal Subsystems**: Subsystems like the Transmitter Optical Sub-Assembly (TOSA), laser driver, and thermoelectric coolers (TEC) dictate operational states.
+3. **Laser Chip Level**: The bare semiconductor laser chip inside the TOSA. Waveguide dimensions ($L$, $w$, $d$) define its boundaries.
+4. **PLaser Physics (Forward)**: Models carrier transport, quantum well recombination, photon field intensity propagation, and self-heating.
+5. **TLaser Digital Twin (Inverse)**: Uses measured LIV curves to identify unmeasurable drifts ($R_{\text{th}}$, $R_s$, $\alpha_i$), calibrating the twin to support engineering diagnostics and design updates.
+
 ---
 
 ## 2. Environment Setup

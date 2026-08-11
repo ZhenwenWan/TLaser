@@ -1,0 +1,14 @@
+{
+    "device_family": "vcsel",
+    "device_id": "VCSEL-850-001",
+    "success": false,
+    "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+    "loss": 0.3091976291910744,
+    "calibrated_values": {
+        "R_th_K_W": 1200.0000081882768,
+        "R_series_Ohm": 59.993861202771605,
+        "R_DBR_top": 0.9969039886686568,
+        "A_recomb_multiplier": 1.0302842072909175,
+        "C_recomb_multiplier": 1.0
+    }
+}

@@ -106,16 +106,23 @@ def main(args_list=None):
     parser.add_argument("--output-dir", type=str, default=None, help="Output directory to save fit parameters")
     args = parser.parse_args(args_list)
     
+    run_calibration(
+        data_file=args.data_file,
+        output_dir=args.output_dir,
+        smoke_test=args.smoke_test
+    )
+
+def run_calibration(data_file=None, output_dir=None, smoke_test=False):
     current_dir = Path(__file__).resolve().parent
-    output_dir = Path(args.output_dir) if args.output_dir else current_dir.parent / "data"
-    output_dir.mkdir(exist_ok=True)
+    out_dir = Path(output_dir) if output_dir else current_dir.parent / "data"
+    out_dir.mkdir(exist_ok=True)
     
     # Load monitored dataset
-    if args.data_file:
-        print(f"Loading monitoring data from {args.data_file}...")
-        data_path = Path(args.data_file)
+    if data_file:
+        print(f"Loading monitoring data from {data_file}...")
+        data_path = Path(data_file)
         if data_path.suffix == ".json":
-            with open(data_path, "r") as f:
+            with open(data_path, "r", encoding="utf-8") as f:
                 raw_data = json.load(f)
             currents = np.array(raw_data["current_A"])
             P_mon = np.array(raw_data["optical_power_W"])
@@ -176,13 +183,13 @@ def main(args_list=None):
         return total_loss
     
     print("\nRunning digital twin parameter calibration optimization...")
-    max_iter = 2 if args.smoke_test else 20
+    max_iter = 2 if smoke_test else 20
     res = minimize(
         objective,
         initial_guess,
         method='L-BFGS-B',
         bounds=bounds,
-        options={'maxiter': max_iter, 'iprint': 1}
+        options={'maxiter': max_iter}
     )
     
     cal_alpha_i, cal_Gamma, cal_C_mult, cal_R_series, cal_R_shunt = res.x
@@ -200,17 +207,17 @@ def main(args_list=None):
         "timestamp": datetime.now().isoformat()
     }
     
-    with open(output_dir / "calibrated_params.json", "w") as f:
+    with open(out_dir / "calibrated_params.json", "w", encoding="utf-8") as f:
         json.dump(calibrated_data, f, indent=4)
         
-    print(f"\nCalibrated parameters saved to {output_dir}/calibrated_params.json")
+    print(f"\nCalibrated parameters saved to {out_dir}/calibrated_params.json")
     
     # Append to calibration history log
-    history_path = output_dir / "calibration_history.json"
+    history_path = out_dir / "calibration_history.json"
     history_list = []
     if history_path.exists():
         try:
-            with open(history_path, "r") as f:
+            with open(history_path, "r", encoding="utf-8") as f:
                 history_list = json.load(f)
                 if not isinstance(history_list, list):
                     history_list = []
@@ -221,7 +228,7 @@ def main(args_list=None):
     # Limit history list to last 50 entries to keep it token efficient
     history_list = history_list[-50:]
     try:
-        with open(history_path, "w") as f:
+        with open(history_path, "w", encoding="utf-8") as f:
             json.dump(history_list, f, indent=4)
         print(f"Calibration history updated in {history_path}")
     except Exception as ex:
@@ -282,12 +289,13 @@ def main(args_list=None):
         spine.set_color("#555555")
         
     plt.tight_layout()
-    plot_path = output_dir / "calibration_fit.svg"
+    plot_path = out_dir / "calibration_fit.svg"
     plt.savefig(plot_path, dpi=300, facecolor=fig.get_facecolor(), edgecolor="none")
-    plot_path_png = output_dir / "calibration_fit.png"
+    plot_path_png = out_dir / "calibration_fit.png"
     plt.savefig(plot_path_png, dpi=300, facecolor=fig.get_facecolor(), edgecolor="none")
     plt.close()
     print(f"Calibration fit comparison plot successfully saved to {plot_path} and {plot_path_png}")
+    return calibrated_data
 
 if __name__ == "__main__":
     main()

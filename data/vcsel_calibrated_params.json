@@ -1,0 +1,14 @@
+{
+    "device_family": "vcsel",
+    "device_id": "VCSEL-MOCK-ACC-01",
+    "success": false,
+    "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+    "loss": 0.03397691194660925,
+    "calibrated_values": {
+        "R_th_K_W": 1200.000002662982,
+        "R_series_Ohm": 60.001011180100996,
+        "R_DBR_top": 0.9954562661769145,
+        "A_recomb_multiplier": 1.0006965405688342,
+        "C_recomb_multiplier": 1.0
+    }
+}

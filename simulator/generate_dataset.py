@@ -112,6 +112,7 @@ def main():
     # Output metadata
     metadata = {
         "generator": "TLaser/generate_dataset.py",
+        "device_family": "edge_emitter",
         "timestamp": datetime.now().isoformat(),
         "seed": seed,
         "smoke_test": args.smoke_test,
@@ -126,7 +127,7 @@ def main():
         }
     }
     
-    with open(output_dir / "pinn_dataset_metadata.json", "w") as f:
+    with open(output_dir / "pinn_dataset_metadata.json", "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=4)
         
     print(f"Dataset generation completed! Saved metadata to pinn_dataset_metadata.json")

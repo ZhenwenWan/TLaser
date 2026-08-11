@@ -1,0 +1,12 @@
+{
+  "current_mA": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
+  "voltage_V": [1.51, 1.58, 1.66, 1.74, 1.83, 1.91, 2.00, 2.08, 2.16, 2.24],
+  "optical_power_mW": [0.0, 0.05, 0.25, 0.58, 1.02, 1.48, 1.96, 2.38, 2.72, 2.92],
+  "metadata": {
+    "device_id": "VCSEL-850-001",
+    "device_family": "vcsel",
+    "aperture_dia_um": 8.0,
+    "T_ambient_K": 298.0,
+    "wavelength_nominal_nm": 850.0
+  }
+}

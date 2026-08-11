@@ -1640,3 +1640,1121 @@ Mobile documentation/post is acceptable when:
    - training/data-quality summary.
 4. Add a short section in the manual: `Mobile Product Post Assets`.
 5. Ensure Chinese mobile assets are either fixed UTF-8 or omitted from release until encoding is solved.
+
+---
+
+## Telecom Diode Laser Dataset Search: 2026-08-09
+
+User focus: search for datasets that can train TLaser.
+
+### Search Summary
+
+Codex searched for public datasets using terms around:
+
+- telecom diode laser L-I-V dataset,
+- semiconductor laser diode current-voltage-power data,
+- InGaAsP/InP laser data,
+- 1550 nm and 1310 nm laser diode characterization,
+- laser diode aging and reliability data,
+- DFB laser L-I-V data.
+
+Main finding:
+
+- A large, clean, public, product-ready dataset of telecom DFB/FP diode-laser L-I-V curves suitable for direct TLaser training was not found in this pass.
+- Public measured data exists, but it is scattered, small, device-specific, or adjacent to TLaser's exact target.
+- The best practical training strategy is hybrid:
+  1. use local TLaser/PLaser/Lasers-generated synthetic data,
+  2. import public measured datasets for calibration/validation anchors,
+  3. create a TLaser measurement schema so future real L-I-V sweeps can be accumulated into a proper training corpus.
+
+### Candidate Dataset Sources
+
+#### Candidate A: Cardiff InP Quantum Dot Mode-Locked Laser Data
+
+Source:
+
+- https://research.cardiff.ac.uk/converis/portal/detail/Dataset/111414926?auxfun=&lang=en_GB
+- DOI: https://doi.org/10.17035/d.2020.0111414926
+
+Relevance:
+
+- High relevance as measured semiconductor-laser data.
+- InP quantum-dot mode-locked laser dataset.
+- Includes `.dat`, `.txt`, and `.csv` files.
+- The Cardiff page states that the dataset includes optical gain/absorption measurements, current-voltage measurements, average optical power, lasing spectra, pulse-width data, and RF data.
+- The Fig. 3 files are described as three-column current, voltage, and average optical power measurements for a narrow-ridge mode-locked laser.
+
+Limitations:
+
+- Device is a multi-section mode-locked laser, not a standard telecom DFB ridge laser.
+- Bias conditions include gain section and saturable absorber section states.
+- Needs parsing and metadata normalization before use.
+
+Recommended TLaser usage:
+
+- Use as measured validation/calibration data, not as the sole training corpus.
+- Extract rows into TLaser's monitoring schema:
+  - `current_A`
+  - `voltage_V`
+  - `optical_power_W`
+  - metadata: device type, section bias, file/source, temperature if available.
+- Use to validate calibration pipeline behavior on real measured semiconductor-laser curves.
+
+Priority:
+
+- High. Antigravity should investigate and, if downloadable without friction, create an import adapter.
+
+#### Candidate B: Cambridge Directly Modulated Laser Linearization Dataset
+
+Source:
+
+- https://www.repository.cam.ac.uk/items/d1c48478-aae2-46c0-b10e-f02d0eabda7a
+- DOI: https://doi.org/10.17863/CAM.119070
+
+Relevance:
+
+- Open repository dataset.
+- Includes measured and simulated output power at different bias currents, plus S21 frequency responses and modulation/linearization data.
+- Useful for learning measurement schema, L-I curve handling, and dynamic response modeling.
+
+Limitations:
+
+- Device is a 405 nm L405P20 laser, not a 1310/1550 nm telecom diode laser.
+- Better for method validation than telecom physics fitting.
+
+Recommended TLaser usage:
+
+- Use as an adjacent measured laser dataset to test import, plotting, and calibration-code robustness.
+- Do not use to fit telecom material constants.
+- Potentially useful if TLaser later grows a small-signal/dynamic modulation module.
+
+Priority:
+
+- Medium.
+
+#### Candidate C: Local PLaser Dataset
+
+Local path:
+
+- `C:\Users\aw4wz\Documents\Codex\PLaser\data\pinn_inputs.npy`
+- `C:\Users\aw4wz\Documents\Codex\PLaser\data\pinn_targets.npy`
+
+Observed shape:
+
+```text
+PLaser inputs:  (1500, 5)
+PLaser targets: (1500, 105)
+finite: true
+```
+
+Observed scalar target range:
+
+```text
+P_opt max:  ~1.68e-2 W
+WPE max:    ~2.69e-3
+I_total max ~49.0 A
+```
+
+Relevance:
+
+- Immediate local source.
+- Similar model output shape to TLaser.
+- Useful as a baseline for comparing TLaser against PLaser.
+
+Limitations:
+
+- Only 5D inputs, while TLaser currently uses 7D inputs including active width/depth.
+- Appears to share the same large `I_total` behavior found in TLaser, so it likely contains the same electrical/shunt-current realism issue.
+- Synthetic, not measured.
+
+Recommended TLaser usage:
+
+- Use for regression comparison and architecture migration only.
+- Do not treat as high-fidelity measured training data.
+- Before reuse, fix current scaling and electrical model assumptions.
+
+Priority:
+
+- Medium for development, low for product validation.
+
+#### Candidate D: Local Lasers/Elmer Assets
+
+Local path:
+
+- `C:\Users\aw4wz\Documents\Codex\Lasers`
+
+Observed contents:
+
+- Elmer tools and solver assets.
+- Geometry outputs such as `.vtu`, `.obj`, `.json`.
+- Smoke geometry and mesh outputs.
+- Pages and TLaser publication artifacts.
+- Comparison outputs and logs.
+
+Relevance:
+
+- This is the strongest local route toward higher-fidelity TLaser data.
+- It appears to contain geometry/mesh/Elmer infrastructure that could supply transverse physics or reference simulations.
+
+Limitations:
+
+- Not currently organized as a ready TLaser training dataset.
+- Requires an adapter layer to extract consistent numerical features:
+  - geometry parameters,
+  - confinement factor,
+  - effective index,
+  - thermal fields,
+  - carrier/current fields,
+  - optical outputs.
+
+Recommended TLaser usage:
+
+- Build a `lasers_adapter` or `elmer_adapter` that converts selected Lasers outputs into TLaser dataset records.
+- Use Lasers-derived outputs to replace fixed TLaser constants such as `Gamma`.
+- Use Lasers-derived data to validate or tune the quasi-3D simulator.
+
+Priority:
+
+- Very high for improving TLaser fidelity.
+
+### Useful Simulation/Protocol References
+
+#### Ansys InGaAsP/InP MQW Ridge Laser LIV Workflow
+
+Source:
+
+- https://optics.ansys.com/hc/en-us/articles/1500007995042-Simulation-of-LIV-Curves-for-InGaAsP-InP-MQW-Ridge-Laser
+
+Relevance:
+
+- Highly relevant method reference for TLaser's simulator architecture.
+- Describes an InGaAsP/InP MQW ridge-laser L-I workflow.
+- The workflow separates:
+  - optical mode simulation,
+  - MQW gain simulation,
+  - 1D traveling-wave laser simulation,
+  - optional drift-diffusion/voltage/leakage extension.
+
+Recommended TLaser usage:
+
+- Use as a design reference for TLaser's high-fidelity roadmap.
+- Align TLaser simulator stages with:
+  - effective/group index and confinement factor extraction,
+  - gain and spontaneous emission data vs carrier density and temperature,
+  - traveling-wave laser sweep,
+  - CHARGE/drift-diffusion-style voltage and leakage modeling.
+
+Priority:
+
+- High as a methodology reference, not a directly reusable public dataset.
+
+#### Telecommunications Laser Diode L-I-V Production Test Protocol
+
+Source:
+
+- https://www.testandmeasurement.com/doc/dc-production-testing-of-telecommunications-l-0001
+
+Relevance:
+
+- Good reference for what real telecom laser diode module L-I-V measurement contains.
+- Describes current sweep, voltage measurement, light-output measurement, back-facet monitor diode current, threshold/kink/slope-efficiency analysis.
+- The example sweep runs from 10 mA to 1 A in 10 mA steps.
+
+Recommended TLaser usage:
+
+- Use to define TLaser's real measurement ingestion schema.
+- Add optional fields:
+  - back-facet monitor current,
+  - dark current,
+  - slope efficiency,
+  - threshold current,
+  - kink flags.
+
+Priority:
+
+- High for measurement schema and product QA.
+
+#### Laser Diode Life Testing / Reliability Data Concepts
+
+Source:
+
+- https://www.gophotonics.com/whitepapers/details/628-laser-diode-life-testing
+
+Relevance:
+
+- Describes the kind of parameters tracked during laser diode life testing, including operating current, optical output power, threshold current, and forward voltage under accelerated aging conditions.
+
+Recommended TLaser usage:
+
+- Use as a guide for future TLaser aging/degradation dataset schema.
+- Add optional monitoring fields:
+  - aging time,
+  - stress temperature,
+  - stress current or stress optical power,
+  - threshold-current drift,
+  - optical-power drift,
+  - forward-voltage drift.
+
+Priority:
+
+- Medium now, high if TLaser expands into reliability prediction.
+
+### Recommended Training Data Strategy for TLaser
+
+Codex does not recommend training TLaser solely on scraped public datasets. There are not enough directly matching public telecom diode-laser L-I-V datasets available from this pass.
+
+Recommended staged strategy:
+
+1. Fix TLaser synthetic generator first.
+   - Correct the current/shunt model.
+   - Add quality gates.
+   - Add solver convergence outputs.
+   - Add dataset quality reports.
+
+2. Build a local high-fidelity adapter.
+   - Use the local Lasers/Elmer assets to provide transverse and thermal parameters.
+   - At minimum, import or derive:
+     - `Gamma(w, d, T)`,
+     - `n_eff`,
+     - `n_g`,
+     - active-region overlap,
+     - thermal resistance or temperature rise.
+
+3. Add measured-data importers.
+   - Implement importers for:
+     - Cardiff InP QD MLL data,
+     - Cambridge laser linearization data,
+     - user-supplied TLaser JSON/CSV L-I-V files.
+
+4. Split data by purpose.
+   - Synthetic TLaser/Lasers data: surrogate training.
+   - Public measured data: validation and calibration sanity checks.
+   - Real user measurement data: product calibration and eventual fine-tuning.
+
+5. Create a canonical TLaser dataset schema.
+   - Suggested fields:
+     - `device_id`
+     - `device_type`
+     - `wavelength_nm`
+     - `temperature_K`
+     - `current_A`
+     - `voltage_V`
+     - `optical_power_W`
+     - `monitor_current_A`
+     - `R1`
+     - `R2`
+     - `L_um`
+     - `w_um`
+     - `d_um`
+     - `measurement_mode`
+     - `source`
+     - `license`
+     - `notes`
+
+### Immediate Antigravity Tasks
+
+1. Create `data/external_sources/catalog.json`.
+2. Add source entries for Cardiff, Cambridge, Ansys workflow, telecom L-I-V protocol reference, PLaser local data, and Lasers local assets.
+3. Create `data/schemas/liv_measurement.schema.json`.
+4. Implement `scripts/import_cardiff_inp_qd.py` if the Cardiff files can be downloaded locally.
+5. Implement `scripts/import_plaser_dataset.py` for local compatibility analysis, not as final training data.
+6. Implement `scripts/build_lasers_adapter_dataset.py` to start extracting useful features from local Lasers outputs.
+7. Add a measured-vs-synthetic dataset label to all records.
+8. Do not retrain TLaser on external data until each imported record has units, source, license, and device metadata.
+
+### Dataset Search Verdict
+
+Best immediate path:
+
+- Use local TLaser/Lasers simulation infrastructure for training data after fixing data-quality issues.
+- Use Cardiff measured InP laser data as the first public measured validation/calibration source.
+- Use Cambridge data only as an adjacent method/dynamics test source.
+
+There is no evidence from this search that a large open telecom DFB L-I-V dataset exists ready for direct TLaser training. TLaser should therefore build its own curated dataset pipeline rather than depend on public web datasets alone.
+
+---
+
+## Tweet: What To Do Next
+
+TLaser next move: stop hunting for a perfect public telecom DFB/FP L-I-V dataset. Build a physics-first pipeline.
+
+Fix simulator current realism, add dataset QA, regenerate clean synthetic data, then calibrate with small measured L-I-V files.
+
+Train on verified physics. Validate on scarce real data.
+
+---
+
+## VCSEL Adaptation Task: 2026-08-10
+
+User question: what should we do if TLaser is adapted for VCSEL, and can Antigravity create a demo video showing TLaser working with VCSEL?
+
+### Inspector Comment
+
+Adapting TLaser from telecom edge-emitting diode lasers to VCSELs is possible, but it should be treated as a new product mode rather than a simple parameter rename. The current TLaser simulator is built around a longitudinal edge-emitting cavity with `P_plus(z)`, `P_minus(z)`, mirror reflectivities `R1/R2`, cavity length, ridge width, active thickness, and longitudinal spatial hole burning. A VCSEL has a vertical cavity, DBR mirrors, oxide/current aperture, radial current spreading, transverse modes, thermal lensing, and often stronger coupling between aperture geometry, heating, mode profile, and output power.
+
+### Required VCSEL Model Changes
+
+Antigravity should add a separate VCSEL mode instead of forcing VCSEL behavior into the existing edge-emitter parameter set.
+
+Minimum VCSEL input parameters:
+
+- emission wavelength,
+- top/bottom DBR reflectivity or mirror loss,
+- cavity effective length,
+- oxide/current aperture diameter,
+- active-region quantum-well count and gain parameters,
+- series resistance,
+- thermal resistance,
+- ambient/heatsink temperature,
+- injection current,
+- optical confinement factor,
+- transverse mode/effective area parameter.
+
+Minimum VCSEL outputs:
+
+- threshold current,
+- optical output power,
+- terminal voltage,
+- wall-plug efficiency,
+- slope efficiency,
+- junction temperature estimate,
+- mode radius or transverse intensity profile,
+- L-I-V curve before/after calibration.
+
+### Physics Differences To Address
+
+Required:
+
+- Replace or supplement the edge-emitter longitudinal propagation model with a VCSEL rate-equation or cylindrical/radial reduced model.
+- Model DBR mirror loss and effective cavity length rather than simple cleaved-facet `R1/R2` behavior.
+- Add aperture-dependent current density and optical mode area.
+- Add self-heating and thermal resistance as first-class terms.
+- Include transverse-mode or radial profile visualization for the demo.
+- Avoid claiming high-fidelity VCSEL physics until validated against VCSEL L-I-V data.
+
+### Data Strategy For VCSEL
+
+Recommended:
+
+- Start with a VCSEL synthetic generator using accepted reduced rate equations.
+- Use datasheet curves only as priors/range constraints, not as raw training data.
+- Allow users to upload measured VCSEL L-I-V curves for calibration.
+- Keep VCSEL datasets separate from edge-emitter TLaser datasets:
+  - `data/datasets/edge_emitter/...`
+  - `data/datasets/vcsel/...`
+
+Required metadata:
+
+- device family: `edge_emitter` or `vcsel`,
+- aperture diameter,
+- wavelength,
+- temperature,
+- current sweep range,
+- source: synthetic, measured, datasheet digitized, or imported.
+
+### Demo Video Task For Antigravity
+
+Task: create a VCSEL-oriented TLaser demo video.
+
+Recommended artifact:
+
+- `TLaser_VCSEL_Demonstration.mp4`
+- generation script: `generate_vcsel_animation.py`
+
+Demo storyline:
+
+1. Introduce VCSEL mode in TLaser.
+2. Show VCSEL-specific inputs:
+   - aperture diameter,
+   - DBR reflectivity/loss,
+   - thermal resistance,
+   - active current,
+   - temperature.
+3. Show instant prediction:
+   - output power,
+   - threshold current,
+   - voltage,
+   - WPE,
+   - junction temperature.
+4. Visualize transverse/radial mode profile instead of only longitudinal `P(z)`.
+5. Sweep current and aperture diameter.
+6. Show thermal rollover or efficiency droop at high current.
+7. Show calibration against a small VCSEL L-I-V dataset.
+8. End with a clear label: `VCSEL mode: reduced physics demonstration`.
+
+### Acceptance Criteria
+
+The VCSEL demo is acceptable only if:
+
+- it does not present edge-emitter physics as VCSEL physics,
+- VCSEL-specific parameters are visible,
+- the visualization includes transverse/radial behavior or explicitly states it is a lumped reduced model,
+- the demo distinguishes synthetic prediction from measured calibration,
+- limitations are shown in the README/manual/demo caption,
+- VCSEL data is not mixed silently with edge-emitter data.
+
+### Immediate Antigravity Tasks
+
+1. Add a short `VCSEL Adaptation` section to `README.md`.
+2. Add a `vcsel` product mode proposal to the implementation plan or a new `Doc/vcsel_adaptation_plan.md`.
+3. Create a minimal VCSEL reduced simulator prototype, separate from `Quasi3DSimulator`.
+4. Define `data/schemas/vcsel_liv_measurement.schema.json`.
+5. Create `generate_vcsel_animation.py`.
+6. Generate `TLaser_VCSEL_Demonstration.mp4`.
+7. Mark the demo as a reduced-physics VCSEL demonstration until validated.
+
+### VCSEL Inspector Verdict
+
+VCSEL support is feasible as a TLaser extension, but it should be implemented as a separate device-family mode with its own simulator, schema, dataset, and demo. A demo video is reasonable now, as long as it is honestly labeled as a reduced-physics VCSEL demonstration and does not imply that the current edge-emitter model already covers VCSEL behavior.
+
+---
+
+## VCSEL Chinese Landing Page Publishing Task: 2026-08-10
+
+User request: make sure the VCSEL case is posted at:
+
+- https://zhenwenwan.github.io/Pages/TLaser_CN.html
+
+### Inspector Finding
+
+Codex checked the local page artifact:
+
+- `C:\Users\aw4wz\Documents\Codex\Lasers\Pages\TLaser_CN.html`
+
+The local Chinese landing page exists, but no `VCSEL`/`vcsel`/vertical-cavity keyword match was found in the inspected file. This means the VCSEL case is not yet visibly represented in the local source artifact for the Chinese TLaser landing page.
+
+Note: the page source is outside the current writable TLaser workspace, so Codex records this as an Antigravity publishing task rather than editing it from this inspection pass.
+
+### Required Antigravity Task
+
+Antigravity should update the Chinese TLaser landing page so the VCSEL case is posted on:
+
+- `TLaser_CN.html`
+- target live URL: `https://zhenwenwan.github.io/Pages/TLaser_CN.html`
+
+Recommended section title:
+
+- `VCSEL 扩展演示`
+
+Recommended content:
+
+- State that VCSEL support is a TLaser extension mode.
+- Explain that it is separate from the existing edge-emitting diode-laser mode.
+- Mention VCSEL-specific physics:
+  - DBR mirrors,
+  - vertical cavity,
+  - oxide/current aperture,
+  - radial/transverse mode profile,
+  - thermal rollover.
+- Link or embed the VCSEL demo video when available:
+  - `TLaser_VCSEL_Demonstration.mp4`
+- Label the demo clearly:
+  - `VCSEL mode: reduced-physics demonstration`
+- Link to the VCSEL adaptation plan or inspection section if a public document is generated.
+
+### Suggested Chinese Copy
+
+```text
+VCSEL 扩展演示
+
+TLaser 将增加 VCSEL 器件族模式，用于展示垂直腔面发射激光器的简化数字孪生流程。该模式与当前边发射通信激光器模型分离，重点展示 DBR 镜面、氧化孔径、横向模式分布、自热效应以及 L-I-V 标定流程。
+
+注意：当前 VCSEL 演示为 reduced-physics demonstration，需在真实 VCSEL L-I-V 数据验证后才能作为高保真模型使用。
+```
+
+### Publishing Acceptance Criteria
+
+The VCSEL landing-page update is acceptable when:
+
+- `https://zhenwenwan.github.io/Pages/TLaser_CN.html` visibly includes a VCSEL section.
+- The section clearly distinguishes VCSEL from edge-emitting DFB/FP lasers.
+- The page does not imply the current edge-emitter simulator already models VCSEL physics.
+- The page links or embeds `TLaser_VCSEL_Demonstration.mp4` once generated.
+- The Chinese text renders correctly with no mojibake.
+- The page includes a limitation statement: reduced-physics VCSEL demo until validated.
+
+### Verification Task
+
+After publishing, Antigravity should verify with:
+
+```powershell
+Invoke-WebRequest -UseBasicParsing -Uri "https://zhenwenwan.github.io/Pages/TLaser_CN.html?cb=<timestamp>"
+```
+
+Required checks:
+
+- page returns HTTP 200,
+- content contains `VCSEL`,
+- content contains `垂直腔` or `面发射`,
+- content contains `reduced-physics` or equivalent Chinese limitation text,
+- video link exists if the demo video has been generated.
+
+---
+
+## VCSEL Robust Service Capacity Inspection: 2026-08-10
+
+User focus: inspect further and plan a to-do list toward robust service capacity for VCSEL.
+
+### Current VCSEL Artifact Inspection
+
+Antigravity has implemented a meaningful first VCSEL pass. The following VCSEL-specific artifacts are now present:
+
+- `simulator/vcsel_simulator.py`
+- `Doc/vcsel_adaptation_plan.md`
+- `data/schemas/vcsel_liv_measurement.schema.json`
+- `generate_vcsel_animation.py`
+- `TLaser_VCSEL_Demonstration.mp4`
+- README VCSEL extension section
+- CHANGELOG VCSEL entries
+- unit-test coverage in `tests/test_tlaser.py`
+
+Codex verification performed:
+
+- Python syntax compilation passed for:
+  - `simulator/vcsel_simulator.py`
+  - `generate_vcsel_animation.py`
+  - `tests/test_tlaser.py`
+- Direct VCSEL simulator smoke run succeeded.
+
+Observed smoke output for `VCSELSimulator().solve_radial_profiles(6.0)`:
+
+```text
+P_opt_mW: 2.109956
+V_term: 2.035322
+T_junction: 310.122369 K
+I_th_mA: 0.111695
+profile length: 51
+```
+
+Demo artifact:
+
+- `TLaser_VCSEL_Demonstration.mp4` exists.
+- Size observed: about 16 MB.
+- Codex did not visually inspect the video in this pass.
+
+### Critical Service-Readiness Findings
+
+#### Finding 1: VCSEL JSON schema is not standards-compliant
+
+The schema file exists:
+
+- `data/schemas/vcsel_liv_measurement.schema.json`
+
+However, it uses uppercase JSON Schema type names:
+
+```text
+OBJECT, ARRAY, NUMBER, STRING
+```
+
+JSON Schema expects lowercase type names:
+
+```text
+object, array, number, string
+```
+
+Affected paths include:
+
+- root `/type`
+- `/properties/current_mA/type`
+- `/properties/current_mA/items/type`
+- `/properties/voltage_V/type`
+- `/properties/optical_power_mW/type`
+- `/properties/metadata/type`
+- metadata field types.
+
+Required fix:
+
+- Convert all JSON Schema type values to lowercase.
+- Add schema validation tests using `jsonschema`.
+- Add at least one valid and one invalid VCSEL L-I-V fixture.
+
+Priority:
+
+- P0 for service capacity. The service cannot reliably validate external VCSEL data until this is fixed.
+
+#### Finding 2: VCSEL mode is not integrated into the app
+
+Codex did not find `VCSEL`, `vcsel`, `aperture`, or `DBR` references in `app.py`.
+
+Current status:
+
+- VCSEL exists as simulator/demo artifacts.
+- VCSEL does not yet appear to be a user-facing service mode in the Streamlit dashboard.
+
+Required fix:
+
+- Add an explicit device-family selector:
+  - `Edge-emitting diode laser`
+  - `VCSEL`
+- Route VCSEL mode to separate controls, simulator calls, plots, and calibration schema.
+- Do not mix VCSEL parameters with edge-emitter parameters.
+
+Priority:
+
+- P0 for service capacity. A demo video alone is not a service.
+
+#### Finding 3: VCSEL calibration path is not implemented
+
+Current calibration code focuses on edge-emitter TLaser parameters.
+
+VCSEL service requires calibration for:
+
+- aperture diameter or effective current aperture,
+- thermal resistance,
+- top DBR mirror loss/reflectivity,
+- series resistance,
+- recombination/gain multiplier,
+- wavelength red-shift thermal coefficient if spectral data exists.
+
+Required fix:
+
+- Add `calibration/vcsel_calibrate.py` or a device-family-aware calibration module.
+- Accept `vcsel_liv_measurement.schema.json` inputs.
+- Fit VCSEL-specific parameters.
+- Generate VCSEL-specific before/after L-I-V and temperature/red-shift plots.
+
+Priority:
+
+- P0 for service capacity.
+
+#### Finding 4: VCSEL simulator is reduced and unvalidated
+
+The current simulator is a useful reduced prototype, but not yet a robust service model.
+
+Main gaps:
+
+- no measured VCSEL validation data,
+- no digitized datasheet comparison,
+- no uncertainty band,
+- no solver convergence metadata,
+- no parameter bounds enforcement at construction,
+- no explicit unit/validity range reporting,
+- no energy-balance or monotonicity gates,
+- threshold current appears very low in the smoke run and should be checked against intended VCSEL class.
+
+Required fix:
+
+- Add a validation notebook/script comparing representative VCSEL L-I-V curves to datasheet or measured curves.
+- Add simulator validity ranges and warnings.
+- Add QA gates for unrealistic threshold, voltage, WPE, and junction temperature.
+
+Priority:
+
+- P1, but required before any high-fidelity claim.
+
+### Robust VCSEL Service Target
+
+Target service capability:
+
+TLaser should support VCSEL as a first-class device-family mode where a user can:
+
+1. Select `VCSEL` as device type.
+2. Enter aperture, DBR, thermal, temperature, and current parameters.
+3. Run instant reduced-physics prediction.
+4. View L-I-V, radial current, radial carrier, optical mode, and thermal output.
+5. Upload measured VCSEL L-I-V data.
+6. Validate uploaded data against schema.
+7. Calibrate VCSEL-specific parameters.
+8. Export calibrated parameters, plots, and a service report.
+9. See clear limits: reduced-physics mode until validated against measured VCSEL data.
+
+### VCSEL Service Architecture To-Do List
+
+#### P0: Service Foundation
+
+1. Fix `vcsel_liv_measurement.schema.json`.
+   - Lowercase all type names.
+   - Add constraints for equal array lengths.
+   - Add units and optional fields for wavelength red-shift, monitor current, and measurement temperature.
+
+2. Add schema validation.
+   - Add `jsonschema` to dependencies or implement a strict local validator.
+   - Add `tests/fixtures/vcsel_valid_liv.json`.
+   - Add `tests/fixtures/vcsel_invalid_liv.json`.
+   - Add tests that reject bad VCSEL data.
+
+3. Add VCSEL app mode.
+   - Device selector in `app.py`.
+   - VCSEL controls:
+     - aperture diameter,
+     - top DBR reflectivity,
+     - bottom DBR reflectivity,
+     - thermal resistance,
+     - ambient temperature,
+     - current.
+   - VCSEL outputs:
+     - `P_opt_mW`,
+     - `V_term`,
+     - `WPE`,
+     - `T_junction`,
+     - `I_th_mA`.
+   - VCSEL plots:
+     - radial carrier profile,
+     - radial current crowding,
+     - mode profile,
+     - L-I-V curve.
+
+4. Add VCSEL calibration.
+   - Implement `run_vcsel_calibration(...)`.
+   - Fit thermal resistance, DBR/top mirror loss, series resistance, aperture/effective area, and gain/recombination multiplier.
+   - Save `data/vcsel_calibrated_params.json`.
+   - Save `data/vcsel_calibration_fit.png/svg`.
+
+5. Keep data separation strict.
+   - Edge-emitter data stays separate from VCSEL data.
+   - Use:
+     - `data/datasets/edge_emitter/`
+     - `data/datasets/vcsel/`
+   - Add `device_family` to all dataset metadata.
+
+#### P1: Model Robustness
+
+6. Add simulator parameter validation.
+   - Reject invalid aperture, DBR reflectivity, thermal resistance, current, and temperature values.
+   - Return warnings for out-of-range service requests.
+
+7. Add simulator diagnostics.
+   - Return:
+     - convergence status,
+     - thermal iteration count,
+     - thermal residual,
+     - energy balance,
+     - max/min carrier density,
+     - max junction temperature warning flag.
+
+8. Add physical QA gates.
+   - Flag:
+     - negative/NaN/Inf outputs,
+     - unrealistic WPE,
+     - excessive junction temperature,
+     - implausible threshold current,
+     - non-monotonic voltage,
+     - severe rollover outside expected range.
+
+9. Add VCSEL synthetic dataset generator.
+   - Script: `simulator/generate_vcsel_dataset.py`.
+   - Sampling modes:
+     - uniform,
+     - Latin Hypercube,
+     - Sobol if dependencies allow.
+   - Outputs:
+     - scalar metrics,
+     - radial profiles,
+     - L-I-V sweep arrays.
+
+10. Add VCSEL dataset quality report.
+    - File: `data/datasets/vcsel/<dataset_id>/quality_report.json`.
+    - Include:
+      - input/output ranges,
+      - NaN/Inf counts,
+      - thermal warnings,
+      - current/temperature coverage,
+      - validation split IDs.
+
+#### P2: Validation And Service Trust
+
+11. Add VCSEL validation sources.
+    - Digitized datasheet curves are acceptable for initial validation if clearly labeled.
+    - Real measured L-I-V files are preferred.
+    - Track source, license, device type, aperture, wavelength, and temperature.
+
+12. Add validation metrics.
+    - L-I RMSE,
+    - V-I RMSE,
+    - threshold-current error,
+    - slope-efficiency error,
+    - rollover-current error if present,
+    - wavelength red-shift error if spectral data exists.
+
+13. Add uncertainty labels.
+    - `in_range`
+    - `extrapolated`
+    - `reduced_physics_only`
+    - `validated_against_measured_data`
+
+14. Add service report export.
+    - Export JSON/PDF/PNG bundle with:
+      - inputs,
+      - calibrated parameters,
+      - plots,
+      - residuals,
+      - model limitations,
+      - timestamp and version.
+
+#### P3: Product And Operations
+
+15. Add VCSEL API surface.
+    - Local Python API:
+      - `predict_vcsel(params)`
+      - `calibrate_vcsel(liv_data)`
+      - `validate_vcsel_liv(data)`
+    - Optional HTTP API later if TLaser becomes a hosted service.
+
+16. Add operational logging.
+    - Log prediction request metadata, validation failures, calibration success/failure, and runtime.
+    - Do not log sensitive user data by default.
+
+17. Add service-level tests.
+    - App mode test.
+    - Schema validation test.
+    - Calibration convergence test.
+    - Dataset generation smoke test.
+    - Export report test.
+    - Demo artifact existence test.
+
+18. Add documentation.
+    - README VCSEL quickstart.
+    - VCSEL user manual section.
+    - VCSEL data schema documentation.
+    - VCSEL limitations and validation status.
+    - VCSEL demo page section.
+
+19. Add webpage publishing tasks.
+    - English and Chinese landing pages should include VCSEL mode.
+    - Chinese page target remains:
+      - `https://zhenwenwan.github.io/Pages/TLaser_CN.html`
+    - Verify no mojibake.
+
+20. Add release checklist.
+    - VCSEL schema valid.
+    - VCSEL app mode works.
+    - VCSEL calibration smoke test passes.
+    - Demo video reviewed.
+    - Validation status documented.
+
+### VCSEL Service Capacity Acceptance Criteria
+
+VCSEL mode can be called a robust service only when:
+
+- VCSEL is selectable in the app.
+- VCSEL data upload validates against a correct schema.
+- Bad VCSEL data is rejected with clear user errors.
+- VCSEL prediction runs without crashing across documented parameter ranges.
+- VCSEL calibration fits at least synthetic noisy L-I-V data reliably.
+- VCSEL outputs include warnings when extrapolated or outside validity range.
+- VCSEL artifacts are separated from edge-emitter artifacts.
+- VCSEL demo and webpage clearly state reduced-physics status.
+- At least one measured or datasheet-derived validation comparison is documented.
+
+### VCSEL Service Inspector Verdict
+
+The VCSEL extension has advanced from plan to prototype: simulator, schema, demo script, demo video, and tests exist. It is not yet a robust service. The next Antigravity cycle should focus on service foundations: standards-compliant schema, VCSEL app mode, VCSEL calibration, strict data separation, simulator diagnostics, and validation against at least one external VCSEL curve.
+
+---
+
+## TLaser Engineering Mapping Visualization Task: 2026-08-11
+
+User-provided product direction: the TLaser website should clearly explain where TLaser sits in the real telecom photonics industry chain. Customers first encounter an optical module, not a bare laser chip, so the website needs a complete engineering cognition path from real product to digital twin.
+
+### Task Name
+
+`TLaser Engineering Mapping Visualization`
+
+### Task Owner
+
+Implementation developer: Antigravity
+
+Inspector: Codex
+
+### Background
+
+The current TLaser website and documentation explain simulator, surrogate, calibration, and demo artifacts, but they do not yet clearly answer the first product-positioning question:
+
+Where does TLaser fit in the actual telecom optical-module engineering workflow?
+
+A visitor is likely to understand the market through tangible products such as optical transceiver modules, not through the laser chip alone. The website should therefore guide the visitor through a visual path:
+
+```text
+Optical Module -> Module Internals -> Laser Package -> Laser Chip -> PLaser Physics -> TLaser Digital Twin -> Engineering Decisions
+```
+
+### Objective
+
+Add an independent website section that uses 3D visualization, animation, and engineering-flow graphics to show how TLaser connects real optical modules, laser chips, PLaser physical simulation, parameter identification, and performance prediction.
+
+The visitor should understand within 2-3 minutes:
+
+- TLaser's position in the telecom photonics value chain.
+- Why the optical module is the customer-facing product.
+- How the laser chip sits inside the optical module.
+- How PLaser models the physical laser.
+- How TLaser uses measured module/device data for inverse modeling and digital-twin calibration.
+- How the result feeds back into engineering decisions.
+
+### Required Website Storyline
+
+#### Layer 1: Real Optical Module
+
+Show a 3D CAD-style optical module as the entry point.
+
+Required message:
+
+- The optical module is the purchasable, testable, customer-facing product.
+
+Suggested annotations:
+
+- module housing,
+- optical port,
+- electrical connector,
+- test interface,
+- product-level L-I-V and performance measurements.
+
+#### Layer 2: Module Decomposition
+
+Animate or visually expand the optical module to reveal internal subsystems.
+
+Required internal elements:
+
+- optical engine,
+- laser package or TOSA,
+- driver chip,
+- photodiode/monitor path,
+- thermal/TEC path if applicable,
+- PCB/interconnect.
+
+Required message:
+
+- TLaser links module-level measurements to internal laser/device parameters.
+
+#### Layer 3: Laser Chip Focus
+
+Zoom from module internals into the laser package and then the laser chip.
+
+Required transition:
+
+- real device/package view -> simplified laser-chip geometry model.
+
+Suggested labels:
+
+- active region,
+- cavity,
+- facets or DBR mirrors depending on device mode,
+- electrical injection,
+- thermal path,
+- optical output.
+
+#### Layer 4: PLaser Physical Model
+
+Show PLaser as the forward physical modeling engine.
+
+Required physical processes:
+
+- carrier transport/recombination,
+- photon generation/propagation,
+- thermal effects,
+- optical mode/wave behavior.
+
+Design requirement:
+
+- Avoid overly formula-heavy presentation.
+- Use animated fields, arrows, heat maps, and simplified profile plots.
+
+Required message:
+
+- PLaser answers: given structure and parameters, what physical behavior and performance should the laser produce?
+
+#### Layer 5: TLaser Digital Twin And Inverse Modeling
+
+Show TLaser as the digital twin and inverse-modeling platform.
+
+Required flow:
+
+```text
+Module Test Data -> TLaser Calibration -> Parameter Identification -> PLaser/Simulator Update -> Prediction -> Engineering Decision
+```
+
+Required TLaser roles:
+
+- ingest L-I-V or module test data,
+- identify hidden/drifted parameters,
+- synchronize the digital twin,
+- predict performance,
+- support design, calibration, diagnosis, and reliability decisions.
+
+### Visual And Interaction Requirements
+
+Recommended style:
+
+- dark technical background,
+- blue/cyan photonics glow,
+- 3D CAD-like module and chip models,
+- semi-transparent panels,
+- zoom-in transitions,
+- exploded-view animation,
+- concise annotations,
+- minimal paragraph text,
+- infographic-first structure.
+
+Avoid:
+
+- long blocks of text,
+- formula-heavy slides,
+- generic AI/ML marketing visuals,
+- unclear distinction between module, package, chip, PLaser, and TLaser,
+- claiming unvalidated high-fidelity behavior.
+
+### Deliverables
+
+Antigravity should produce:
+
+1. A new website section or page:
+   - suggested name: `Engineering Mapping`
+   - suggested URL target:
+     - English: `TLaser.html#engineering-mapping` or separate `TLaser_Engineering_Mapping.html`
+     - Chinese: `TLaser_CN.html#engineering-mapping` or equivalent Chinese page section.
+
+2. 3D/animated visual assets:
+   - optical module overview,
+   - exploded module internals,
+   - laser package/chip zoom,
+   - PLaser physics visualization,
+   - TLaser inverse-modeling workflow.
+
+3. A concise bilingual caption set:
+   - English,
+   - Chinese, with verified UTF-8 rendering and no mojibake.
+
+4. Optional short video/GIF:
+   - `TLaser_Engineering_Mapping.mp4` or `.gif`
+   - showing the complete zoom/decomposition/workflow story.
+
+5. Documentation update:
+   - add a short section to README/manual explaining the engineering mapping storyline.
+
+### Suggested Chinese Section Title
+
+```text
+TLaser 工程映射可视化
+```
+
+Suggested Chinese headline:
+
+```text
+从光模块到激光芯片，再到数字孪生工程决策
+```
+
+Suggested Chinese summary:
+
+```text
+TLaser 将真实光模块测试、内部激光芯片物理模型、PLaser 正向仿真和数字孪生反向标定连接起来，帮助工程师从可测产品追溯到不可直接观测的器件参数，并将标定结果反馈到性能预测和设计决策。
+```
+
+### Acceptance Criteria
+
+The website upgrade is acceptable when:
+
+- A first-time visitor can understand TLaser's industry-chain position in 2-3 minutes.
+- The page clearly starts from a real optical module, not from abstract equations.
+- The module -> package -> chip -> PLaser -> TLaser -> decision path is visually obvious.
+- PLaser and TLaser roles are clearly distinguished:
+  - PLaser: forward physical simulation/modeling.
+  - TLaser: digital twin, inverse modeling, calibration, prediction.
+- The visuals make clear which parts are product, package, chip, model, and data workflow.
+- Chinese and English text render correctly.
+- Claims remain honest about current fidelity and validation status.
+
+### Inspector Priority
+
+Priority: P1 product-positioning upgrade.
+
+This task is not a replacement for simulator/data-quality hardening. It should run in parallel with core technical hardening because it improves customer understanding and website conversion, while the physics/data work improves credibility.

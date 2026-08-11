@@ -1,0 +1,11 @@
+{
+    "timestamp": "2026-08-11T08:38:31.204940",
+    "overall_success": true,
+    "steps": {
+        "dependencies": true,
+        "dataset_smoke_test": true,
+        "surrogate_train_smoke_test": true,
+        "calibration_smoke_test": true,
+        "unit_tests": true
+    }
+}

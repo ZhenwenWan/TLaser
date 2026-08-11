@@ -1,0 +1,51 @@
+{
+    "generator": "TLaser/generate_dataset.py",
+    "device_family": "edge_emitter",
+    "timestamp": "2026-08-11T08:37:06.192967",
+    "seed": 42,
+    "smoke_test": true,
+    "sample_count": 10,
+    "total_attempts": 10,
+    "failed_solves": 0,
+    "failure_modes": {},
+    "parameter_ranges": {
+        "R1": [
+            0.1,
+            0.95
+        ],
+        "R2": [
+            0.05,
+            0.5
+        ],
+        "L_um": [
+            100.0,
+            1000.0
+        ],
+        "T0": [
+            250.0,
+            360.0
+        ],
+        "I_active": [
+            0.01,
+            0.5
+        ],
+        "w_active_um": [
+            1.5,
+            4.0
+        ],
+        "d_active_um": [
+            0.1,
+            0.5
+        ]
+    },
+    "shapes": {
+        "inputs": [
+            10,
+            7
+        ],
+        "targets": [
+            10,
+            105
+        ]
+    }
+}

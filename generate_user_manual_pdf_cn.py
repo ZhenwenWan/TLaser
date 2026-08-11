@@ -34,7 +34,7 @@ def add_header(ax, title):
 
 def add_footer(ax, page_num):
     ax.plot([0.05, 0.95], [0.08, 0.08], color="#233554", transform=ax.transAxes, linewidth=1.0)
-    ax.text(0.05, 0.05, "© 2026 万振文 (仿真与AI专家)。保留所有权利。", color=MUTED_TEXT, fontsize=8)
+    ax.text(0.05, 0.05, "Copyright (c) 2026 万振文 (仿真与AI专家)。保留所有权利。", color=MUTED_TEXT, fontsize=8)
     ax.text(0.90, 0.05, f"第 {page_num} 页", color=MUTED_TEXT, fontsize=9)
 
 def draw_paragraph(ax, text, x, y, max_len=45, line_height=0.022, color="#e6f1ff", fontsize=9.5):
@@ -272,7 +272,7 @@ with PdfPages(str(output_pdf_path)) as pdf:
     ax.add_patch(rect_author)
     ax.text(0.10, 0.26, "万振文 (仿真与AI物理建模专家)", color="#ffffff", fontsize=11, fontweight="bold")
     ax.text(0.10, 0.22, "商业合作及物理神经网络代理器开发支持联系邮箱: aw4wzw@gmail.com", color=MUTED_TEXT, fontsize=9)
-    ax.text(0.10, 0.17, "项目开源代码仓库: https://github.com/ZhenwenWan/TLaser", color=ACCENT_GREEN, fontsize=9, fontfamily="monospace")
+    ax.text(0.10, 0.17, "项目开源代码仓库: https://github.com/ZhenwenWan/TLaser", color=ACCENT_GREEN, fontsize=9)
     
     add_footer(ax, 5)
     pdf.savefig(fig, facecolor=fig.get_facecolor(), edgecolor="none")

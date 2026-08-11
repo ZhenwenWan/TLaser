@@ -32,7 +32,7 @@ def add_header(ax, title):
 
 def add_footer(ax, page_num):
     ax.plot([0.05, 0.95], [0.08, 0.08], color="#233554", transform=ax.transAxes, linewidth=1.0)
-    ax.text(0.05, 0.05, "© 2026 Zhenwen Wan (AI + Simulation Expert). All rights reserved.", color=MUTED_TEXT, fontsize=8)
+    ax.text(0.05, 0.05, "Copyright (c) 2026 Zhenwen Wan (AI + Simulation Expert). All rights reserved.", color=MUTED_TEXT, fontsize=8)
     ax.text(0.90, 0.05, f"Page {page_num}", color=MUTED_TEXT, fontsize=9)
 
 def draw_paragraph(ax, text, x, y, max_len=95, line_height=0.019, color="#e6f1ff", fontsize=9.2):

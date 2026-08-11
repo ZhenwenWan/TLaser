@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VCSEL_LIV_Measurement_Schema",
+  "description": "Schema for VCSEL light-current-voltage (L-I-V) and spectral telemetry curves used in parameter calibration.",
+  "type": "object",
+  "properties": {
+    "current_mA": {
+      "type": "array",
+      "description": "Injected current sweep array in milliamperes.",
+      "items": { "type": "number", "minimum": 0.0 }
+    },
+    "voltage_V": {
+      "type": "array",
+      "description": "Measured terminal voltage array in volts.",
+      "items": { "type": "number", "minimum": 0.0 }
+    },
+    "optical_power_mW": {
+      "type": "array",
+      "description": "Measured optical power from the top aperture in milliwatts.",
+      "items": { "type": "number", "minimum": 0.0 }
+    },
+    "wavelength_nm": {
+      "type": "array",
+      "description": "Optional measured peak wavelength red-shift track in nanometers.",
+      "items": { "type": "number", "minimum": 0.0 }
+    },
+    "monitor_current_mA": {
+      "type": "array",
+      "description": "Optional measured back-facet monitor current array in milliamperes.",
+      "items": { "type": "number", "minimum": 0.0 }
+    },
+    "measurement_temperature_K": {
+      "type": "array",
+      "description": "Optional local ambient temperature of each point in Kelvin.",
+      "items": { "type": "number", "minimum": 0.0 }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "device_id": { "type": "string" },
+        "device_family": { "type": "string", "const": "vcsel" },
+        "aperture_dia_um": { "type": "number", "minimum": 1.0, "maximum": 50.0 },
+        "T_ambient_K": { "type": "number", "minimum": 100.0, "maximum": 500.0 },
+        "wavelength_nominal_nm": { "type": "number", "minimum": 600.0, "maximum": 2000.0 }
+      },
+      "required": ["device_family", "aperture_dia_um", "T_ambient_K"]
+    }
+  },
+  "required": ["current_mA", "voltage_V", "optical_power_mW", "metadata"]
+}
