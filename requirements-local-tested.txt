@@ -1,0 +1,10 @@
+# Direct dependencies from the local runtime used to verify the device-view release.
+# CPU Torch wheels use the upstream extra index configured in requirements.txt.
+--extra-index-url https://download.pytorch.org/whl/cpu
+numpy==2.5.2
+matplotlib==3.11.1
+streamlit==1.61.1
+torch==2.13.0+cpu
+scipy==1.18.0
+jsonschema==4.26.0
+opencv-python==5.0.0.93

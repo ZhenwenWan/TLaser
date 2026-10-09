@@ -1,6 +1,17 @@
 # TLaser - Real-Time Digital Twin & Parameter Calibration Diode Laser Platform
 
-TLaser is an advanced Physics-Informed Neural Network (PINN) surrogate modeling and online parameter calibration platform for edge-emitting telecom semiconductor diode lasers. By combining a high-fidelity simulator core with a deep learning surrogate and an active optimization loop, TLaser maps and aligns physical laser performance to real-world characteristics in under 5 milliseconds.
+The local dashboard now includes a shared, versioned ridge-device configuration,
+dimension-driven schematic, configuration save/load, and fixed-geometry calibration
+comparison. Start it with `./run_tlaser.ps1`; see
+[the first-release guide](Doc/device_model_release.md) for supported workflows,
+measurement semantics and limitations. Fitted prediction uses the physical
+simulator; the existing seven-input PINN remains a nominal predictor.
+
+TLaser is a reduced-model Physics-Informed Neural Network (PINN) prediction and
+parameter calibration prototype for edge-emitting telecom semiconductor diode
+lasers. It combines a synthetic longitudinal simulator, a nominal surrogate, and
+bounded inverse fitting. Measured-device accuracy and end-to-end response latency
+require separate validation; this release does not establish a sub-5-ms guarantee.
 
 ---
 

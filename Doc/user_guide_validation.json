@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-09",
+  "checks": [
+    "Launcher and workflow test paths exist; navy theme configured",
+    "Both measurement examples pass the actual dashboard validator",
+    "Both PDFs contain current launcher/data instructions without raw code fences",
+    "Both staged project pages link to existing PDF/Markdown guide assets"
+  ],
+  "languages": {
+    "EN": {
+      "pdf_pages": 6,
+      "example_matches_data_validator": true,
+      "launcher_commands_present_in_pdf": true,
+      "code_fences_removed": true
+    },
+    "_CN": {
+      "pdf_pages": 5,
+      "example_matches_data_validator": true,
+      "launcher_commands_present_in_pdf": true,
+      "code_fences_removed": true
+    }
+  },
+  "workflow_tests": "7 passed; see test_device_workflow.py",
+  "visual_review": "PDF pages rendered with Poppler for inspection"
+}

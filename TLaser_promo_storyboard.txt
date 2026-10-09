@@ -1,0 +1,11 @@
+TLaser 推广视频分镜
+输出：TLaser_promo_partner_video.mp4
+素材优先来自 C:\Users\aw4wz\Documents\Codex\Lasers\Pages
+
+1. 000s-020s | 投资人能马上理解的问题
+2. 020s-055s | architecture_frame
+3. 055s-075s | 真实世界比模型复杂
+4. 075s-095s | metric_frame
+5. 095s-130s | inverse_frame
+6. 130s-160s | market_frame
+7. 160s-180s | 一句话记住 TLaser

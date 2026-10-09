@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 st.set_page_config(
     page_title="TLaser - Digital Twin Control Center",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="auto"
 )
 
 # App directory configuration
@@ -35,7 +35,8 @@ try:
     surrogate = load_surrogate()
     model_loaded = True
 except Exception as e:
-    st.error(f"Error loading surrogate model: {e}")
+    surrogate = None
+    st.warning(f"Nominal surrogate unavailable: {e}. Device configuration and simulator remain available.")
     model_loaded = False
 
 # Bilingual dictionaries with clean character encoding
@@ -162,7 +163,12 @@ st.title(txt["title"])
 st.subheader(txt["subtitle"])
 st.markdown("---")
 
-if model_loaded:
+if device_family == txt["device_eel"]:
+    from device_ui import render_device_workflow
+    render_device_workflow(surrogate, lang, mode == txt["mode_calib"])
+    st.stop()
+
+if model_loaded or device_family == txt["device_vcsel"]:
     # Mode 1: Live Monitoring & Predictions
     if mode == txt["mode_dash"]:
         # 2 columns for inputs and outputs

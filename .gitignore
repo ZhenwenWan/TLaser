@@ -5,3 +5,5 @@ __pycache__/
 .idea/
 .vscode/
 data/temp_*
+tmp/pdfs/
+web_publish/

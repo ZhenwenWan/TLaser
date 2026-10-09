@@ -1,0 +1,16 @@
+﻿{
+  "chart_count": 1,
+  "blocks": [
+    {
+      "title": "异常指标分类分布",
+      "insight": "图表解读：本次检查共有 1 个异常数值指标，主要用于定位需要优先阅读的指标类别。该图不构成诊断，需结合症状、病史和医生判断。",
+      "block": {
+        "block_type": 40,
+        "add_ons": {
+          "component_type_id": "blk_64df3b277a87c002dafdc52b",
+          "record": "{\"theme\":\"fresh-blue-green-health\",\"elements\":[{\"type\":\"chart\",\"position\":{\"x\":0,\"y\":0,\"width\":600,\"height\":360},\"options\":{\"chartType\":\"horizontalBar\",\"data\":{\"type\":\"standard\",\"value\":{\"columns\":[\"类别\",\"异常项数\"],\"data\":[{\"类别\":\"imaging_sacral\",\"异常项数\":1}]}},\"enableDataEdit\":true}}]}"
+        }
+      }
+    }
+  ]
+}
