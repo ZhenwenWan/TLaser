@@ -28,7 +28,7 @@ def run_sweep(config, low, high, points):
 def compare_nominal(config, surrogate):
     """Compare like-for-like nominal constants, regardless of accepted fit state."""
     baseline = deepcopy(config)
-    baseline["physical"] = default_config()["physical"]
+    baseline["physical"] = getattr(surrogate, "physical", default_config()["physical"])
     started = perf_counter()
     predicted = surrogate.predict(**surrogate_inputs(baseline))
     pinn_ms = (perf_counter()-started)*1000
@@ -49,8 +49,8 @@ def render_simulator_core(c, t):
     st.subheader(t("Simulator core", "模拟器内核"))
     st.write(t("Solve longitudinal carrier and photon distributions, then sweep current to generate L-I-V data for this device.",
                "求解器件纵向载流子与光子分布，通过电流扫描生成 L-I-V 数据。"))
-    st.caption(t("Current engine: reduced quasi-3D longitudinal model with 51 cavity nodes. The detailed 3D view is a geometry reference; a full 3D finite-element solve is not connected to this dashboard.",
-                 "当前内核：51 个腔轴节点的准三维降阶纵向模型。精细三维视图为几何参考，本控制台尚未接入完整三维有限元求解。"))
+    st.caption(t("This sweep uses the reduced longitudinal engine with 51 cavity nodes. Coupled transverse field solves are configured below using the Lasers Elmer runtime.",
+                 "此扫描使用 51 个腔轴节点的纵向降阶内核。下方可使用 Lasers Elmer 运行时配置耦合横截面空间场求解。"))
     with st.expander(t("Equations and physical constants", "方程与物理常数")):
         st.latex(r"G_{\mathrm{inj}}-R_{\mathrm{rec}}(N)-R_{\mathrm{stim}}(N,P)=0")
         st.latex(r"\frac{dP^{\pm}}{dz}=\pm\left(\Gamma g(N)-\alpha_i\right)P^{\pm}")
@@ -105,8 +105,8 @@ def render_simulator_core(c, t):
 
 def render_pinn_surrogate(c, surrogate, t):
     st.subheader(t("PINN surrogate", "PINN 代理模型"))
-    st.write(t("Inspect the nominal trained surrogate and compare its prediction with the physical simulator at the saved operating point.",
-               "查看已训练的标称代理模型，在保存的工作点与物理模拟器对比预测结果。"))
+    st.write(t("Inspect the active surrogate and compare its prediction with the physical simulator at the saved operating point. Generate and train a new model below.",
+               "查看当前代理模型，在保存的工作点与物理模拟器对比预测结果。下方可生成数据并训练新模型。"))
     if surrogate is None:
         st.warning(t("No trained surrogate is loaded. Physical simulation and calibration remain available.",
                      "未加载训练后的代理模型，仍可使用物理仿真与标定。"))
@@ -120,19 +120,24 @@ def render_pinn_surrogate(c, surrogate, t):
                "7 维输入 → 128 → 128 → 128 → 105 维输出：光功率、效率、端口电流以及两组 51 点剖面。"))
     meta_path = ROOT / "data" / "pinn_dataset_metadata.json"
     with st.expander(t("Training data and physics constraints", "训练数据与物理约束")):
-        if meta_path.exists():
+        if hasattr(surrogate, "physical"):
+            st.json({"sampling_ranges": surrogate.ranges, "fixed_physical_constants": surrogate.physical})
+        elif meta_path.exists():
             meta = json.loads(meta_path.read_text(encoding="utf-8"))
             st.write(t("Recorded synthetic training samples", "记录的合成训练样本数"), meta["sample_count"])
             st.dataframe([{"Input / 输入": k, "Min / 下限": v[0], "Max / 上限": v[1]}
                           for k, v in meta["parameter_ranges"].items()], hide_index=True)
-        st.latex(r"\mathcal{L}=\mathcal{L}_{data}+0.05\mathcal{L}_{carrier}+0.05\mathcal{L}_{photon}+1.5\mathcal{L}_{smooth}")
+        if hasattr(surrogate, "physical"):
+            st.latex(r"\mathcal{L}=\mathcal{L}_{data}+\lambda(\mathcal{L}_{carrier}+\mathcal{L}_{photon})+0.02\mathcal{L}_{smooth},\quad\lambda\leq0.005")
+        else:
+            st.latex(r"\mathcal{L}=\mathcal{L}_{data}+0.05\mathcal{L}_{carrier}+0.05\mathcal{L}_{photon}+1.5\mathcal{L}_{smooth}")
         loss_plot = ROOT / "data" / "pinn_training_loss.png"
-        if loss_plot.exists():
+        if loss_plot.exists() and not hasattr(surrogate, "physical"):
             st.image(str(loss_plot), caption=t("Saved training history", "已保存的训练历史"))
-        st.caption(t("Training is performed offline. This panel inspects the loaded checkpoint; no training or weights are overwritten.",
-                     "模型离线训练。本面板用于检查已加载的模型，不重新训练或覆盖权重。"))
-    st.caption(t("Comparison uses nominal constants because fitted constants are not PINN inputs. A single operating-point comparison is not measured-device validation or a latency guarantee.",
-                 "拟合常数不属于 PINN 输入，因此对比采用标称常数。单工作点对比不代表实测器件验证或延迟保证。"))
+        st.caption(t("New training jobs save separate model versions; activating a model does not overwrite the bundled checkpoint.",
+                     "新训练任务保存独立模型版本，启用模型不会覆盖内置权重。"))
+    st.caption(t("Comparison uses the model's fixed training constants. A single operating-point comparison is not measured-device validation or a latency guarantee.",
+                 "对比采用模型的固定训练常数。单工作点对比不代表实测器件验证或延迟保证。"))
     if st.button(t("Compare PINN with simulator", "对比 PINN 与模拟器"), key="compare_pinn"):
         st.session_state.pop("ridge_pinn_check", None)
         try:

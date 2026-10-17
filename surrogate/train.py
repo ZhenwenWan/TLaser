@@ -10,6 +10,7 @@ import os
 import sys
 import math
 import argparse
+import json
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
@@ -29,13 +30,22 @@ import torch.optim as optim
 # Add local path to import PINNLaser
 sys.path.append(str(Path(__file__).resolve().parent))
 from model import PINNLaser
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from cae_jobs import write_json
 
 def main():
     parser = argparse.ArgumentParser(description="Train PINN surrogate model for TLaser.")
     parser.add_argument("--epochs", type=int, default=600, help="Number of training epochs")
     parser.add_argument("--smoke-test", action="store_true", help="Run quick verification with 5 epochs")
     parser.add_argument("--output-dir", type=str, default=None, help="Directory containing dataset and target for weights")
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--progress-file", type=str, default=None)
+    parser.add_argument("--cancel-file", type=str, default=None)
+    parser.add_argument("--physical-config", type=str, default=None)
     args = parser.parse_args()
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    physical = json.loads(Path(args.physical_config).read_text()) if args.physical_config else {}
     
     epochs = 5 if args.smoke_test else args.epochs
     
@@ -108,13 +118,18 @@ def main():
     loss_history = []
     
     for epoch in range(epochs):
+        if args.cancel_file and Path(args.cancel_file).exists():
+            raise InterruptedError("Training cancelled")
         model.train()
         optimizer.zero_grad()
         
         pred = model(X_train)
         
         # 1. Data regression loss (MSE)
-        loss_data = nn.MSELoss()(pred, y_train)
+        # Give device-level outputs and each spatial profile equal influence.
+        squared_error = (pred-y_train)**2
+        loss_data = (squared_error[:, :3].mean(dim=0).sum()
+                     + squared_error[:, 3:54].mean() + squared_error[:, 54:105].mean())/5
         
         # Unscale variables for physics computation
         X_unscaled = X_train * torch.FloatTensor(in_max - in_min) + torch.FloatTensor(in_min)
@@ -154,12 +169,12 @@ def main():
             gain_node = g0_gain * (torch.log(torch.clamp(N_scaled / N_tr_scaled, min=1.0e-3)))
             gain_node = torch.clamp(gain_node, min=0.0)
             
-            C_recomb_scaled = 30000.0 * temp_auger_scale
+            C_recomb_scaled = 3.0e25 * physical.get("C_mult", 1.0) * temp_auger_scale
             R_rec = (1.0e26 * N_scaled) + (1.0e26 * N_scaled**2) + C_recomb_scaled * N_scaled**3
             R_stim = (gain_node * P_node) / (A_act * E_phot)
             
             f_N = G_inj - R_rec - R_stim
-            phys_residual_carrier += torch.mean((f_N / 1.0e27)**2)
+            phys_residual_carrier += torch.mean((f_N / torch.clamp(G_inj, min=1e24))**2)
             
         loss_carrier = phys_residual_carrier / len(nodes_carrier)
         
@@ -175,17 +190,21 @@ def main():
         g_prof = g0_gain[:, None] * torch.log(torch.clamp(N_scaled_prof / N_tr_scaled_batch, min=1.0e-3))
         g_prof = torch.clamp(g_prof, min=0.0)
         
-        Gamma = 0.05
-        alpha_i = 10.0
+        Gamma = physical.get("Gamma", 0.05)
+        alpha_i = physical.get("alpha_i", 10.0)
         k_local = Gamma * g_prof - alpha_i
         
-        # Central difference second derivative for P(z)
+        # Integrate D=P_plus-P_minus using the same first-order equations
+        # as the simulator; then enforce S'=k*D for total power S.
+        # This retains spatially varying gain and spontaneous emission.
         dz = L / 50.0
-        d2P_dz2 = (P_prof[:, 2:] - 2.0 * P_prof[:, 1:-1] + P_prof[:, :-2]) / (dz[:, None]**2)
-        
-        # Photon propagation residual on all internal grid points [1:-1]
-        photon_res = d2P_dz2 - (k_local[:, 1:-1]**2) * P_prof[:, 1:-1]
-        loss_photon = torch.mean((photon_res / 10.0)**2)
+        spontaneous = 1e-4 * 1e-10 * N_prof**2 * A_act[:, None] * E_phot
+        d0 = ((X_unscaled[:, 0]-1)/(X_unscaled[:, 0]+1))*P_prof[:, 0]
+        increments = dz[:, None]*(k_local[:, :-1]*P_prof[:, :-1]+2*spontaneous[:, :-1])
+        difference = torch.cat((d0[:, None], d0[:, None]+torch.cumsum(increments, dim=1)), dim=1)
+        photon_res = P_prof[:, 1:]-P_prof[:, :-1]-dz[:, None]*k_local[:, :-1]*difference[:, :-1]
+        power_scale = max(float(np.max(targets[:, 54:105])), 1e-6)
+        loss_photon = torch.mean((photon_res/power_scale)**2)
         
         # 3. Spatial smoothness regularization (TV + Laplacian)
         diff1_N = pred[:, 4:54] - pred[:, 3:53]
@@ -199,12 +218,18 @@ def main():
         loss_smooth = loss_smooth1 + 10.0 * loss_smooth2
         
         # Combined Loss: data + carrier rate + photon propagation + smoothness
-        loss = loss_data + 0.05 * loss_carrier + 0.05 * loss_photon + 1.5 * loss_smooth
+        physics_weight = .005 * min(1., (epoch+1)/200.)
+        loss = loss_data + physics_weight*(loss_carrier+loss_photon) + .02*loss_smooth
         
+        if not torch.isfinite(loss):
+            raise RuntimeError("Nonfinite training loss; model rejected")
         loss.backward()
         optimizer.step()
         
         loss_history.append(loss.item())
+        if args.progress_file and (epoch % 10 == 0 or epoch == epochs-1):
+            write_json(args.progress_file, {"stage": "training", "epoch": epoch+1, "epochs": epochs,
+                                           "loss": loss.item()})
         if (epoch + 1) % 50 == 0 or args.smoke_test:
             print(f"  Epoch {epoch+1:3d}/{epochs}: Loss = {loss.item():.6e} (Data={loss_data.item():.6e}, Carrier={loss_carrier.item():.6e}, Photon={loss_photon.item():.6e}, Smooth={loss_smooth.item():.6e})")
             
@@ -214,6 +239,7 @@ def main():
     
     # Output final metrics
     print("\n=== FINAL SURROGATE METRICS ===")
+    (data_dir / "training_history.json").write_text(json.dumps(loss_history), encoding="utf-8")
     print(f"  Final Combined Loss:    {loss_history[-1]:.6e}")
     print(f"  Final Data MSE Loss:    {loss_data.item():.6e}")
     print(f"  Final Carrier Res Loss: {loss_carrier.item():.6e}")

@@ -10,15 +10,15 @@ simulator; the existing seven-input PINN remains a nominal predictor.
 The edge-emitter workspace has five shared-device sections in English and Chinese:
 
 1. **Device model** — edit and save the device configuration; inspect the Lasers 15-part 3D geometry.
-2. **Simulator core** — inspect the reduced solver and constants, run a current sweep, and export L-I-V results or a synthetic calibration dataset.
-3. **PINN surrogate** — inspect the loaded 7-input/105-output model, training metadata and loss plot; compare a nominal prediction with the simulator.
+2. **Simulator core** — run L-I-V sweeps and isolated Lasers/Elmer coupled jobs; inspect potential, electric field, electron/hole density, temperature and complex EM fields on the actual transverse mesh, with logs and CSV/VTU export.
+3. **PINN surrogate** — generate a seven-input dataset by repeatedly calling the simulator, train a physics-informed network, inspect held-out validation/test errors, export the model and explicitly activate models that pass the configured gates.
 4. **Instant Performance Prediction** — obtain operating-point metrics and longitudinal profiles using the nominal PINN or physical simulator, including accepted fitted constants.
 5. **Instant Parameter Calibration** — upload L-I-V data or run a synthetic demo, inspect fit diagnostics, and apply accepted constants to simulator predictions.
 
 Simulation and PINN comparison reports are flagged as stale after a device change.
 Calibration remains an iterative solver; the section name does not promise a fixed
 latency. The full 3D geometry is a reference visualization, while the connected
-physics engine is the reduced longitudinal solver. VCSEL remains a separate
+physics engines are the reduced longitudinal solver and a separate Lasers transverse coupled solver. VCSEL remains a separate
 demonstration with its existing prediction and calibration modes.
 
 TLaser is a reduced-model Physics-Informed Neural Network (PINN) prediction and
@@ -40,12 +40,22 @@ Where:
 * **Recombination rate**: $R_{\text{rec}} = A \cdot N + B \cdot N^2 + C \cdot N^3$
 * **Stimulated emission rate**: $R_{\text{stim}} = \frac{g(N) \cdot P_{\text{tot}}(z)}{w_{\text{active}} \cdot d_{\text{active}} \cdot E_{\text{phot}}}$
 
-### Photon Propagation Wave Equation
-The optical wave propagation is modeled using the second-order total-power intensity wave equation:
-$$\frac{d^2P}{dz^2} - (\Gamma g(z) - \alpha_i)^2 P(z) = 0$$
+### Longitudinal optical transport
+The simulator propagates forward and backward powers. New training jobs enforce
+their discrete transport equations using total power $S=P^++P^-$ and difference
+$D=P^+-P^-$, with $k=\Gamma g-\alpha_i$ and spontaneous source $s$:
+$$S'=kD,\qquad D'=kS+2s,\qquad D(0)=\frac{R_1-1}{R_1+1}S(0).$$
+The carrier residual uses the configured Auger multiplier, and the optical
+residual uses the configured confinement and internal loss. Existing bundled
+weights are retained; these changes apply to newly trained models.
 
-> [!NOTE]
-> **Total Power Approximation**: Enforcing a second-order wave intensity derivative for the total power profile $P(z) = P^+(z) + P^-(z)$ is an intentional, accepted reduced-order physical approximation. This formulation allows the neural network to avoid predicting separate forward and backward wave components, reducing target dimensions while preserving the physical wave intensity curvature along the longitudinal cavity axis.
+### Run the CAE workflows
+
+See [the CAE guide](Doc/cae_implementation.md) for setup, validation evidence,
+fidelity boundaries and remaining engineering work. Jobs persist under `runs/`
+and continue across page refreshes. They are local artifacts, excluded from Git.
+The compatible Lasers runtime and its custom libraries are required for spatial
+field simulation; PINN dataset generation uses the built-in longitudinal solver.
 
 ---
 

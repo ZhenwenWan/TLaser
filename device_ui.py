@@ -32,6 +32,7 @@ def style_plot(fig, axes):
 
 def render_device_workflow(surrogate, lang):
     from device_sections import render_simulator_core, render_pinn_surrogate
+    from cae_ui import render_field_jobs, render_training_jobs
 
     def t(en, cn):
         return cn if lang == "CN" else en
@@ -40,6 +41,20 @@ def render_device_workflow(surrogate, lang):
     st.session_state.setdefault("ridge_fit", None)
     st.session_state.setdefault("ridge_applied", False)
     c = deepcopy(st.session_state.ridge_config)
+    selected = st.session_state.get("ridge_active_model")
+    if selected:
+        from cae_jobs import job_path
+        from cae_training import ValidatedSurrogate
+        try:
+            surrogate = ValidatedSurrogate(job_path(selected))
+            st.info(t("Active trained model: ", "当前训练模型：") + selected[:8])
+        except (OSError, ValueError, KeyError) as ex:
+            st.error(str(ex))
+            surrogate = None
+        if st.button(t("Return to bundled nominal model", "恢复内置标称模型")):
+            st.session_state.pop("ridge_active_model", None)
+            st.session_state.pop("ridge_pinn_check", None)
+            st.rerun()
     st.caption(t("One device configuration connects geometry, simulation, surrogate prediction, and calibration.",
                  "同一器件配置贯通几何、物理仿真、代理预测与参数标定。"))
     tabs = st.tabs([t("1. Device model", "1. 器件模型"),
@@ -51,8 +66,12 @@ def render_device_workflow(surrogate, lang):
         render_device_model(c, lang, t)
     with tabs[1]:
         render_simulator_core(c, t)
+        st.divider()
+        render_field_jobs(c, t)
     with tabs[2]:
         render_pinn_surrogate(c, surrogate, t)
+        st.divider()
+        render_training_jobs(c, t)
     with tabs[3]:
         render_prediction(c, surrogate, t)
     with tabs[4]:
@@ -141,17 +160,22 @@ def render_device_model(c, lang, t):
 def render_prediction(c, surrogate, t):
     st.subheader(t("Instant Performance Prediction", "即时性能预测"))
     backend = st.radio(t("Prediction source", "预测来源"),
-                       ["Nominal PINN / 标称 PINN", "Physical simulator / 物理模拟器"], horizontal=True)
+                       ["Trained PINN / 已训练 PINN" if hasattr(surrogate, "physical") else "Nominal PINN / 标称 PINN",
+                        "Physical simulator / 物理模拟器"], horizontal=True)
     try:
-        if backend.startswith("Nominal"):
+        if not backend.startswith("Physical"):
             if surrogate is None:
                 st.warning(t("Nominal surrogate is unavailable. Choose the physical simulator.",
                              "标称代理模型不可用，请选择物理模拟器。"))
                 return
+            if hasattr(surrogate, "physical") and surrogate.physical != c["physical"]:
+                st.error(t("The saved physical constants differ from this model's training constants. Restore the training configuration or retrain.",
+                           "保存的物性常数与训练常数不同，请恢复训练配置或重新训练。"))
+                return
             out = surrogate.predict(**surrogate_inputs(c))
             power, wpe, current, z, n, p = out["P_opt"], out["wpe"], out["I_total"], out["z_grid"], out["N"], out["P"]
-            st.caption(t("Nominal seven-input surrogate; fitted constants are not inputs to this model.",
-                         "标称七输入代理模型；已拟合物理常数不是此模型的输入。"))
+            st.caption(t("Seven-input surrogate with fixed training constants; fitted constants are not model inputs.",
+                         "七输入代理模型采用固定训练常数；拟合物性常数不属于模型输入。"))
         else:
             applied = st.session_state.ridge_applied and st.session_state.ridge_fit is not None
             active = st.session_state.ridge_fit["estimated"] if applied else c
