@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 from device_model import (default_config, validate_config, dumps, loads, surrogate_inputs,
                           DESIGN_BOUNDS, PHYSICAL_BOUNDS, PHYSICAL_UNITS)
-from device_geometry import schematic
+from device_geometry import geometry_3d
 from device_workflow import simulate, demo_measurements, fit_measurements
 
 
@@ -88,7 +88,21 @@ def render_device_workflow(surrogate, lang, calibration_mode):
             st.table([{"Parameter / 参数": k, "Value / 数值": v, "Unit / 单位": PHYSICAL_UNITS[k]}
                       for k, v in c["physical"].items()])
     with view:
-        st.image(schematic(c, lang), width="stretch")
+        true_scale = st.toggle(t("True proportions", "真实比例"), key="ridge_true_scale")
+        show_context = st.toggle(t("Show substrate and facet coatings", "显示衬底与端面镀膜"), value=True,
+                                 key="ridge_show_context")
+        exploded = st.slider(t("Layer separation (µm)", "层间展开距离 (µm)"), 0., 8., 0., .5,
+                             key="ridge_layer_separation")
+        st.plotly_chart(geometry_3d(c, lang, true_scale, show_context, exploded),
+                        width="stretch", key="ridge_geometry_3d", theme=None,
+                        config={"scrollZoom": True, "displaylogo": False,
+                                "modeBarButtonsToAdd": ["orbitRotation", "pan3d", "resetCameraDefault3d"]})
+        st.caption(t("Drag to rotate · scroll / pinch to zoom · choose Pan in the toolbar to move · reset camera to restore the view.",
+                     "拖动旋转 · 滚轮／双指缩放 · 工具栏选择平移 · 重置相机恢复视角。"))
+        st.caption(t("Lasers reference geometry: 15 material parts, 250 µm chip width, 3 µm ridge, 0.08 µm MQW. Cavity length follows the device configuration; other layers retain their source dimensions. Effective solver width/thickness do not redefine the epitaxial stack. Vertical display scale is 12× unless True proportions is enabled. Click legend entries to hide/show parts; double-click to isolate.",
+                     "Lasers 参考几何：15 个材料部件，芯片宽 250 µm、脊宽 3 µm、MQW 厚 0.08 µm。腔长随器件配置更新，其他层保留源模型尺寸；求解器等效宽度和厚度不重新定义外延层。未开启真实比例时，纵向显示放大 12 倍。单击图例显隐部件，双击单独查看。"))
+        st.markdown(t("[Source geometry · Lasers](https://zhenwenwan.github.io/Pages/Projects/Lasers/index.html)",
+                      "[几何来源 · Lasers](https://zhenwenwan.github.io/Pages/Projects/Lasers/index.html)"))
         st.caption(t("Within the documented sampling envelope; model accuracy is not guaranteed by range membership.",
                      "位于文档采样范围内；范围内不代表精度已保证。"))
         fit = st.session_state.ridge_fit

@@ -3,6 +3,7 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 numpy==2.5.2
 matplotlib==3.11.1
+plotly==6.9.0
 streamlit==1.61.1
 torch==2.13.0+cpu
 scipy==1.18.0

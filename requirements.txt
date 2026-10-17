@@ -1,6 +1,7 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 numpy
 matplotlib
+plotly>=6,<7
 streamlit
 torch
 scipy
