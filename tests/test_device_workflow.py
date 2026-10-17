@@ -79,11 +79,11 @@ class DeviceUITests(unittest.TestCase):
         from streamlit.testing.v1 import AppTest
         app = AppTest.from_file(str(Path(__file__).resolve().parents[1]/"app.py"), default_timeout=90).run()
         self.assertFalse(app.exception)
+        self.assertEqual([tab.label for tab in app.tabs], ["1. Device model", "2. Simulator core", "3. PINN surrogate", "4. Instant Performance Prediction", "5. Instant Parameter Calibration"])
         app.number_input(key="ridge_L_um").set_value(520.)
         next(b for b in app.button if b.label == "Update device").click().run()
         self.assertFalse(app.exception)
         self.assertEqual(app.session_state["ridge_config"]["geometry"]["L_um"], 520.)
-        app.sidebar.radio[0].set_value("Parameter Calibration Loop").run()
         self.assertFalse(app.exception)
         self.assertEqual(app.number_input(key="ridge_L_um").value, 520.)
         app.sidebar.selectbox[0].set_value("CN").run()
@@ -93,14 +93,12 @@ class DeviceUITests(unittest.TestCase):
     def test_demo_fit_apply_and_simulator_prediction(self):
         from streamlit.testing.v1 import AppTest
         app = AppTest.from_file(str(Path(__file__).resolve().parents[1]/"app.py"), default_timeout=90).run()
-        app.sidebar.radio[0].set_value("Parameter Calibration Loop").run()
         next(r for r in app.radio if r.label == "Measurement source").set_value("Synthetic demo / 合成演示").run()
         next(b for b in app.button if b.label == "Run calibration").click().run()
         self.assertFalse(app.exception)
         self.assertTrue(app.session_state["ridge_fit"]["acceptable"])
         next(b for b in app.button if b.label == "Use fitted constants for simulator prediction").click().run()
         self.assertTrue(app.session_state["ridge_applied"])
-        app.sidebar.radio[0].set_value("Live Monitoring & Predictions").run()
         next(r for r in app.radio if r.label == "Prediction source").set_value("Physical simulator / 物理模拟器").run()
         self.assertFalse(app.exception)
         self.assertTrue(any("accepted fitted constants" in x.value for x in app.caption))

@@ -7,6 +7,20 @@ comparison. Start it with `./run_tlaser.ps1`; see
 measurement semantics and limitations. Fitted prediction uses the physical
 simulator; the existing seven-input PINN remains a nominal predictor.
 
+The edge-emitter workspace has five shared-device sections in English and Chinese:
+
+1. **Device model** — edit and save the device configuration; inspect the Lasers 15-part 3D geometry.
+2. **Simulator core** — inspect the reduced solver and constants, run a current sweep, and export L-I-V results or a synthetic calibration dataset.
+3. **PINN surrogate** — inspect the loaded 7-input/105-output model, training metadata and loss plot; compare a nominal prediction with the simulator.
+4. **Instant Performance Prediction** — obtain operating-point metrics and longitudinal profiles using the nominal PINN or physical simulator, including accepted fitted constants.
+5. **Instant Parameter Calibration** — upload L-I-V data or run a synthetic demo, inspect fit diagnostics, and apply accepted constants to simulator predictions.
+
+Simulation and PINN comparison reports are flagged as stale after a device change.
+Calibration remains an iterative solver; the section name does not promise a fixed
+latency. The full 3D geometry is a reference visualization, while the connected
+physics engine is the reduced longitudinal solver. VCSEL remains a separate
+demonstration with its existing prediction and calibration modes.
+
 TLaser is a reduced-model Physics-Informed Neural Network (PINN) prediction and
 parameter calibration prototype for edge-emitting telecom semiconductor diode
 lasers. It combines a synthetic longitudinal simulator, a nominal surrogate, and

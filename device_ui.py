@@ -1,4 +1,4 @@
-"""Compact shared device view for the two edge-emitter workflows."""
+"""Five-section workspace sharing one edge-emitter device configuration."""
 from copy import deepcopy
 import json
 import numpy as np
@@ -30,7 +30,9 @@ def style_plot(fig, axes):
                 label.set_color("#e6f1ff")
 
 
-def render_device_workflow(surrogate, lang, calibration_mode):
+def render_device_workflow(surrogate, lang):
+    from device_sections import render_simulator_core, render_pinn_surrogate
+
     def t(en, cn):
         return cn if lang == "CN" else en
 
@@ -38,7 +40,26 @@ def render_device_workflow(surrogate, lang, calibration_mode):
     st.session_state.setdefault("ridge_fit", None)
     st.session_state.setdefault("ridge_applied", False)
     c = deepcopy(st.session_state.ridge_config)
+    st.caption(t("One device configuration connects geometry, simulation, surrogate prediction, and calibration.",
+                 "同一器件配置贯通几何、物理仿真、代理预测与参数标定。"))
+    tabs = st.tabs([t("1. Device model", "1. 器件模型"),
+                    t("2. Simulator core", "2. 模拟器内核"),
+                    t("3. PINN surrogate", "3. PINN 代理模型"),
+                    t("4. Instant Performance Prediction", "4. 即时性能预测"),
+                    t("5. Instant Parameter Calibration", "5. 即时参数标定")])
+    with tabs[0]:
+        render_device_model(c, lang, t)
+    with tabs[1]:
+        render_simulator_core(c, t)
+    with tabs[2]:
+        render_pinn_surrogate(c, surrogate, t)
+    with tabs[3]:
+        render_prediction(c, surrogate, t)
+    with tabs[4]:
+        render_calibration(c, t)
 
+
+def render_device_model(c, lang, t):
     st.subheader(t("Device model · fixed ridge edge emitter", "器件模型 · 固定脊形边发射激光器"))
     st.caption(t("Steady-state CW preset · reduced facet-mirror model · DFB and EML physics are future extensions.",
                  "稳态 CW 预设 · 简化端面镜模型 · DFB 和 EML 物理模型待扩展。"))
@@ -115,41 +136,46 @@ def render_device_workflow(surrogate, lang, calibration_mode):
                            "Change / 变化": fit["estimated"]["physical"][k]-fit["original"]["physical"][k]}
                           for k in PHYSICAL_BOUNDS])
 
-    if not calibration_mode:
-        st.markdown(t("### Performance prediction", "### 性能预测"))
-        backend = st.radio(t("Prediction source", "预测来源"),
-                           ["Nominal PINN / 标称 PINN", "Physical simulator / 物理模拟器"], horizontal=True)
-        try:
-            if backend.startswith("Nominal"):
-                if surrogate is None:
-                    st.warning(t("Nominal surrogate is unavailable. Choose the physical simulator.",
-                                 "标称代理模型不可用，请选择物理模拟器。"))
-                    return
-                out = surrogate.predict(**surrogate_inputs(c))
-                power, wpe, current, z, n, p = out["P_opt"], out["wpe"], out["I_total"], out["z_grid"], out["N"], out["P"]
-                st.caption(t("Nominal seven-input surrogate; fitted constants are not inputs to this model.",
-                             "标称七输入代理模型；已拟合物理常数不是此模型的输入。"))
-            else:
-                applied = st.session_state.ridge_applied and st.session_state.ridge_fit is not None
-                active = st.session_state.ridge_fit["estimated"] if applied else c
-                out = simulate(active)[0]
-                power, wpe, current, z, n, p = out["power_W"], out["wpe"], out["current_total_A"], out["z_um"], out["N"], out["P"]
-                st.caption(t("Simulator with accepted fitted constants." if applied else "Simulator with saved configuration constants.",
-                             "模拟器使用已接受的拟合常数。" if applied else "模拟器使用当前配置中的常数。"))
-            a, b, cc = st.columns(3)
-            a.metric(t("Both-facet power", "双端面总光功率"), f"{power*1000:.3f} mW")
-            b.metric("WPE", f"{wpe*100:.3f}%")
-            cc.metric(t("Terminal current", "端口电流"), f"{current:.4f} A")
-            fig, axes = plt.subplots(1, 2, figsize=(10, 3))
-            axes[0].plot(z, n/1e18); axes[0].set(xlabel="z (µm)", ylabel="N (10¹⁸ cm⁻³)")
-            axes[1].plot(z, p*1000); axes[1].set(xlabel="z (µm)", ylabel="P (mW)")
-            style_plot(fig, axes)
-            fig.tight_layout(); st.pyplot(fig); plt.close(fig)
-        except (ValueError, RuntimeError) as ex:
-            st.error(str(ex))
-        return
 
-    st.markdown(t("### Inverse calibration · fixed geometry", "### 逆向标定 · 固定几何尺寸"))
+
+def render_prediction(c, surrogate, t):
+    st.subheader(t("Instant Performance Prediction", "即时性能预测"))
+    backend = st.radio(t("Prediction source", "预测来源"),
+                       ["Nominal PINN / 标称 PINN", "Physical simulator / 物理模拟器"], horizontal=True)
+    try:
+        if backend.startswith("Nominal"):
+            if surrogate is None:
+                st.warning(t("Nominal surrogate is unavailable. Choose the physical simulator.",
+                             "标称代理模型不可用，请选择物理模拟器。"))
+                return
+            out = surrogate.predict(**surrogate_inputs(c))
+            power, wpe, current, z, n, p = out["P_opt"], out["wpe"], out["I_total"], out["z_grid"], out["N"], out["P"]
+            st.caption(t("Nominal seven-input surrogate; fitted constants are not inputs to this model.",
+                         "标称七输入代理模型；已拟合物理常数不是此模型的输入。"))
+        else:
+            applied = st.session_state.ridge_applied and st.session_state.ridge_fit is not None
+            active = st.session_state.ridge_fit["estimated"] if applied else c
+            out = simulate(active)[0]
+            power, wpe, current, z, n, p = out["power_W"], out["wpe"], out["current_total_A"], out["z_um"], out["N"], out["P"]
+            st.caption(t("Simulator with accepted fitted constants." if applied else "Simulator with saved configuration constants.",
+                         "模拟器使用已接受的拟合常数。" if applied else "模拟器使用当前配置中的常数。"))
+        a, b, cc = st.columns(3)
+        a.metric(t("Both-facet power", "双端面总光功率"), f"{power*1000:.3f} mW")
+        b.metric("WPE", f"{wpe*100:.3f}%")
+        cc.metric(t("Terminal current", "端口电流"), f"{current:.4f} A")
+        fig, axes = plt.subplots(1, 2, figsize=(10, 3))
+        axes[0].plot(z, n/1e18); axes[0].set(xlabel="z (µm)", ylabel="N (10¹⁸ cm⁻³)")
+        axes[1].plot(z, p*1000); axes[1].set(xlabel="z (µm)", ylabel="P (mW)")
+        style_plot(fig, axes)
+        fig.tight_layout(); st.pyplot(fig); plt.close(fig)
+    except (ValueError, RuntimeError) as ex:
+        st.error(str(ex))
+    return
+
+
+
+def render_calibration(c, t):
+    st.subheader(t("Instant Parameter Calibration", "即时参数标定"))
     st.info(t("This release requires known active-region current. Ordinary terminal-current LIV uploads need a conversion/model extension before fitting.",
               "本版本需要已知有源区电流。普通端口电流 LIV 数据需先转换或扩展模型。"))
     source = st.radio(t("Measurement source", "测量来源"), ["Upload JSON / 上传 JSON", "Synthetic demo / 合成演示"], horizontal=True)
@@ -204,6 +230,7 @@ def render_device_workflow(surrogate, lang, calibration_mode):
         fig.tight_layout(); st.pyplot(fig); plt.close(fig)
         if st.button(t("Use fitted constants for simulator prediction", "模拟预测使用拟合常数"), disabled=not fit["acceptable"]):
             st.session_state.ridge_applied = True
+            st.rerun()
             st.success(t("Applied. Select physical simulator in the prediction workflow.", "已应用。请在预测界面选择物理模拟器。"))
         st.download_button(t("Save estimated configuration", "保存估计配置"), dumps(fit["estimated"]), "tlaser_estimated_device.json", "application/json")
         st.download_button(t("Save calibration report", "保存标定报告"), json.dumps(fit, indent=2, ensure_ascii=False, allow_nan=False), "tlaser_calibration.json", "application/json")

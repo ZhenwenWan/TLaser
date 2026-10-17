@@ -154,9 +154,12 @@ device_family = st.sidebar.selectbox("Device Family", [txt["device_eel"], txt["d
 st.sidebar.markdown("---")
 
 # Sidebar App Title
-st.sidebar.header(txt["mode_label"])
-mode = st.sidebar.radio("Mode", [txt["mode_dash"], txt["mode_calib"]], label_visibility="collapsed")
-st.sidebar.markdown("---")
+if device_family == txt["device_vcsel"]:
+    st.sidebar.header(txt["mode_label"])
+    mode = st.sidebar.radio("Mode", [txt["mode_dash"], txt["mode_calib"]], label_visibility="collapsed")
+    st.sidebar.markdown("---")
+else:
+    st.sidebar.caption("Five-section device workspace" if lang == "EN" else "五模块器件工作台")
 
 # Main Page Header
 st.title(txt["title"])
@@ -165,7 +168,7 @@ st.markdown("---")
 
 if device_family == txt["device_eel"]:
     from device_ui import render_device_workflow
-    render_device_workflow(surrogate, lang, mode == txt["mode_calib"])
+    render_device_workflow(surrogate, lang)
     st.stop()
 
 if model_loaded or device_family == txt["device_vcsel"]:
