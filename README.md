@@ -1,7 +1,7 @@
 # TLaser - Real-Time Digital Twin & Parameter Calibration Diode Laser Platform
 
 The local dashboard now includes a shared, versioned ridge-device configuration,
-dimension-driven schematic, configuration save/load, and fixed-geometry calibration
+interactive Lasers 15-part 3D geometry, configuration save/load, and fixed-geometry calibration
 comparison. Start it with `./run_tlaser.ps1`; see
 [the first-release guide](Doc/device_model_release.md) for supported workflows,
 measurement semantics and limitations. Fitted prediction uses the physical
@@ -36,6 +36,33 @@ $$\frac{d^2P}{dz^2} - (\Gamma g(z) - \alpha_i)^2 P(z) = 0$$
 ---
 
 ## 2. Installation & Quickstart
+
+### Open the latest 3D revision on Windows
+
+Stop any older TLaser server with `Ctrl+C` in its PowerShell window. If you are
+using an older checkout, update its launcher once:
+
+```powershell
+cd C:\Users\aw4wz\TLaser  # Or your own TLaser checkout directory
+git pull --ff-only origin main
+.\run_tlaser.ps1
+```
+
+The launcher now checks GitHub on each start, updates clean `main` checkouts
+with fast-forward merges, installs Plotly if missing, validates the geometry,
+and prints the folder and revision being launched. It preserves local edits;
+offline starts use the local revision with a warning. `-SkipUpdate` runs the
+local revision, `-CheckOnly` validates without starting a server, and
+`-UpdateOnly` updates the checkout without launching or installing dependencies.
+An occupied port produces a message instead of silently reusing an older app.
+Use `-Port 8518` to run alongside an existing server.
+
+Open `http://127.0.0.1:8501` and keep PowerShell running. The geometry view
+includes **True proportions**, **Show substrate and facet coatings**, and
+**Layer separation** controls, plus 15 material parts in the legend. Drag to
+rotate, scroll to zoom, and click legend entries to inspect individual layers.
+The imported reference stack is a geometric visualization; reduced solver
+width/thickness do not redefine its epitaxial layer dimensions.
 
 Initialize the virtual environment and install dependencies in a PowerShell window:
 ```powershell
