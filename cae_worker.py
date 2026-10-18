@@ -11,7 +11,10 @@ def main(job_id):
     try:
         check_cancel(folder)
         write_json(folder / "status.json", {"state": "running", "stage": request["kind"]})
-        if request["kind"] == "fields":
+        if request["kind"] == "mesh":
+            from cae_mesh import run_mesh
+            state, stage = run_mesh(folder, request["settings"])
+        elif request["kind"] == "fields":
             from cae_elmer import run_fields
             state, stage = run_fields(folder, request["settings"])
         else:

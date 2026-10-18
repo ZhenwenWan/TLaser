@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import time
 import numpy as np
-from cae_jobs import ROOT, write_json, check_cancel
+from cae_jobs import ROOT, write_json, check_cancel, job_path
 from cae_fields import read_vtu
 from device_model import validate_config
 
@@ -40,7 +40,14 @@ def run_fields(folder, settings):
             raise ValueError(f"Invalid {key}")
     case = folder / "case"
     case.mkdir()
-    shutil.copytree(ROOT / "assets/elmer/mesh", case / "mesh")
+    mesh_source = ROOT / "assets/elmer/mesh"
+    if settings.get("mesh_job"):
+        import json
+        mesh_folder = job_path(settings["mesh_job"])
+        if json.loads((mesh_folder/'status.json').read_text())["state"] != "completed":
+            raise ValueError('Selected mesh job is not complete')
+        mesh_source = mesh_folder/'mesh'
+    shutil.copytree(mesh_source, case / "mesh")
     source = (ROOT / "assets/elmer/coupled.sif").read_text(encoding="utf-8")
     text = source.replace('Mesh DB "../Mesh" "mesh01"', 'Mesh DB "." "mesh"')
     text = text.replace("../../ExeLibs/", libs.as_posix() + "/")
@@ -67,7 +74,7 @@ def run_fields(folder, settings):
         "template_sha256": hashlib.sha256(source.encode()).hexdigest(), "runtime": str(exe),
         "custom_libraries": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in
                              (libs/"CarriersFVMSolve_e12e17.dll", libs/"ThermoSolve.dll", libs/"EMWaveSolve.dll")},
-        "mesh": "Lasers reference mesh01; unchanged transverse geometry", "coordinate_unit": "cm"})
+        "mesh": str(mesh_source), "coordinate_unit": "cm"})
     env = os.environ.copy()
     env["ELMER_HOME"], env["ELMER_LIB"] = str(home), str(libs)
     env["PATH"] = os.pathsep.join([str(home/"bin"), str(home/"share/elmersolver/lib"),
@@ -99,6 +106,8 @@ def run_fields(folder, settings):
     points, triangles, fields = read_vtu(outputs[-1])
     if not all(np.isfinite(a).all() for a in fields.values()):
         raise RuntimeError("Solver produced nonfinite fields")
+    from cae_mesh import longitudinal_from_fields
+    longitudinal_from_fields(folder, c, points, fields)
     # A completed process is not proof of nonlinear/coupled convergence.
     warnings = list(dict.fromkeys(line.strip() for line in log.splitlines()
         if re.search(r"WARNING::|Deltamin|maximum.*iteration|\bNaN\b", line, re.I)

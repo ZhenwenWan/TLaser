@@ -35,6 +35,28 @@ Training/test errors are against a simulator, not experimental accuracy.
 
 ## Operating guide
 
+### Lasers Simulator core update (2026-10-18)
+
+The Simulator core now provides three stages: **Mesher**, **Quasi-3D coupled
+solver**, and **Visualization and postprocessing**. The mesher is copied from
+Lasers/Tools/generate_gmsh_mesh01.py and uses its App/Geometry model, preserves
+11 material regions and boundary IDs, and exports Gmsh/Elmer files. Select a
+completed mesh job in the solver form. Element-size scale controls refinement;
+physical geometry dimensions remain those of the Lasers reference model.
+
+After Elmer finishes, TLaser computes the area-weighted MQW temperature on body 4,
+matches mesh nodes to solved field coordinates, and passes that temperature to
+the longitudinal carrier/forward/backward optical solver. Active current and
+effective active dimensions remain explicit design inputs. This extends the
+Lasers run_quasi_3d.py architecture, whose transverse baseline current is
+hard-coded, with an automatic thermal handoff. It is one-way coupling, not an
+iterated transverse/longitudinal feedback loop or a full volumetric solve.
+
+Postprocessing includes all solved field components, EM phase, mesh inspection,
+cross-section probes with CSV export, iteration extrema, longitudinal forward
+and backward power, spatial hole burning, and downloadable raw results.
+Gmsh defaults to C:/gmsh/gmsh.exe and can be selected in the app.
+
 1. Start `run_tlaser.ps1`, configure the device and choose **Simulator core**.
    The current-sweep tool uses the built-in longitudinal model.
 2. For spatial fields, the default runtime is discovered from the sibling Lasers

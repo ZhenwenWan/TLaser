@@ -99,7 +99,7 @@ def render_device_model(c, lang, t):
     controls, view = st.columns([1, 2])
     with controls:
         with st.form("ridge_design"):
-            st.markdown(t("**Geometry**", "**几何尺寸**"))
+            st.markdown(t("**Design parameters**", "**设计参数**"))
             fields = [("geometry", "L_um", t("Cavity length L (µm)", "腔长 L (µm)"), 10.),
                       ("geometry", "w_um", t("Effective active width w (µm)", "等效有源区宽度 w (µm)"), .1),
                       ("geometry", "d_um", t("Effective active thickness d (µm)", "等效有源层厚度 d (µm)"), .001),

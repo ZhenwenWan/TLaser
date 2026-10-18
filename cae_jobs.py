@@ -34,7 +34,7 @@ def job_path(job_id):
 
 
 def start_job(kind, settings):
-    if kind not in {"fields", "training"}:
+    if kind not in {"mesh", "fields", "training"}:
         raise ValueError("Unknown job kind")
     job_id = uuid.uuid4().hex
     folder = job_path(job_id)

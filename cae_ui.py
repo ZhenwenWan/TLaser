@@ -12,6 +12,32 @@ from cae_elmer import detect_lasers, runtime
 from cae_fields import read_vtu, available_fields
 from cae_training import KEYS, SECTIONS
 from device_model import DESIGN_BOUNDS
+from cae_mesh import read_mesh
+
+
+def render_mesher(t):
+    st.markdown(t('### 1. Mesher · Lasers / Gmsh','### 1. 网格生成 · Lasers / Gmsh'))
+    st.caption(t('Generate the Lasers 11-region transverse mesh with conforming interfaces. Scale changes element sizes, not physical dimensions.',
+                 '生成 Lasers 的 11 区域横截面共形网格。比例控制单元尺寸，不改变物理尺寸。'))
+    with st.form('mesh_job'):
+        gmsh=st.text_input(t('Gmsh executable','Gmsh 可执行程序'),'C:/gmsh/gmsh.exe')
+        scale=st.slider(t('Element-size scale','单元尺寸比例'),.5,3.,1.,.1)
+        submit=st.form_submit_button(t('Generate mesh','生成网格'))
+    if submit:
+        if not Path(gmsh).is_file():
+            st.error(t('Gmsh executable not found.','未找到 Gmsh 可执行程序。'))
+        else:
+            start_job('mesh',dict(gmsh=gmsh,scale=scale)); st.rerun()
+    selected=jobs_panel('mesh',t)
+    if selected and selected[1]['state']=='completed':
+        folder=selected[0]
+        st.json(json.loads((folder/'mesh.json').read_text()),expanded=False)
+        xyz,tri,bodies=read_mesh(folder/'mesh')
+        fig,ax=plt.subplots(figsize=(10,4))
+        ax.tripcolor(xyz[:,0],xyz[:,1],tri,facecolors=bodies,cmap='tab20',edgecolors='#555',linewidth=.15)
+        ax.set(xlabel='x (µm)',ylabel='y (µm)',aspect='equal',title='Lasers material regions and mesh')
+        st.pyplot(fig); plt.close(fig)
+        st.download_button(t('Download mesh package','下载网格包'),(folder/'mesh.zip').read_bytes(),'mesh.zip')
 
 
 def jobs_panel(kind, t):
@@ -51,13 +77,16 @@ def jobs_panel(kind, t):
 
 
 def render_field_jobs(c, t):
-    st.markdown(t("### Coupled spatial simulation", "### 耦合空间场仿真"))
+    render_mesher(t)
+    st.markdown(t("### 2. Quasi-3D coupled solver", "### 2. 准三维耦合求解器"))
     st.write(t("Run the Lasers Poisson/carrier, thermal and vector Helmholtz solvers on the reference transverse mesh.",
                "在参考横截面网格上运行 Lasers 泊松／载流子、热传导与矢量 Helmholtz 求解器。"))
-    st.caption(t("This is a 2D transverse mesh with 1,663 nodes and 3,218 triangles. Cavity length and mirrors feed the optical material settings. Effective active width/thickness do not remesh this domain. Contact potential is a solver boundary value, not terminal bias.",
-                 "采用 1663 节点、3218 三角形的二维横截面网格。腔长及反射率用于光学材料设置；等效有源区宽厚不重划此网格。接触电势是求解器边界值，不等同于端口偏压。"))
+    st.caption(t("Lasers 2D+1D architecture: transverse carrier/thermal/EM solve → area-averaged MQW temperature → longitudinal carrier and forward/backward optical transport. Current is the configured active current; this is one-way thermal coupling. Contact potential is not terminal bias.",
+                 "Lasers 二维+一维架构：横截面载流子／热／电磁求解 → MQW 面积平均温度 → 纵向载流子及双向光传播。有源电流采用设计配置；当前为单向热耦合。接触电势不等同端口偏压。"))
     with st.form("field_job"):
         root = st.text_input(t("Lasers runtime folder", "Lasers 运行目录"), detect_lasers(), key="cae_runtime")
+        meshes=[j[0] for j in read_jobs('mesh') if j[2]['state']=='completed']
+        mesh_job=st.selectbox(t('Solver mesh','求解网格'),['Reference mesh01']+meshes)
         a,b,d = st.columns(3)
         temperature = a.number_input(t("Heat-sink temperature (K)", "热沉温度 (K)"),250.,450.,float(c["operating"]["T0_K"]),1.)
         potential = b.number_input(t("p-contact potential (V)", "p 接触电势 (V)"),-1.,2.,.57724,.001,format="%.5f")
@@ -74,7 +103,8 @@ def render_field_jobs(c, t):
         try:
             runtime(root)
             start_job("fields",dict(lasers_root=root,temperature=temperature,p_potential=potential,
-                      frequency=frequency*1e12,em_drive=em_drive,iterations=iterations,tolerance=tolerance,configuration=c))
+                      frequency=frequency*1e12,em_drive=em_drive,iterations=iterations,tolerance=tolerance,configuration=c,
+                      mesh_job=None if mesh_job=='Reference mesh01' else mesh_job))
             st.rerun()
         except (OSError,ValueError) as ex:
             st.error(str(ex))
@@ -85,6 +115,7 @@ def render_field_jobs(c, t):
     if status["state"] not in {"candidate","completed"} or not (folder/"fields.json").exists():
         return
     report=json.loads((folder/"fields.json").read_text(encoding="utf-8"))
+    st.markdown(t('### 3. Visualization and postprocessing','### 3. 可视化与后处理'))
     st.warning(t("Solver output available. Review convergence and field ranges before engineering use.",
                  "已生成求解结果，请在工程使用前审阅收敛性与场量范围。"))
     if report.get("warnings"):
@@ -129,6 +160,32 @@ def render_field_jobs(c, t):
     st.download_button(t("Download field CSV", "下载场量 CSV"),csv.getvalue(),"field.csv","text/csv")
     st.download_button(t("Download solver VTU", "下载求解器 VTU"),(folder/frame).read_bytes(),Path(frame).name)
     st.download_button(t("Download generated solver case", "下载生成的求解配置"),(folder/"case/case.sif").read_bytes(),"case.sif")
+    with st.expander(t('Cross-section probe and iteration history','截面探针与迭代历史')):
+        cut=st.slider(t('Horizontal cut y (µm)','水平截面 y (µm)'),float(xyz[:,1].min()),float(xyz[:,1].max()),float(np.median(xyz[:,1])))
+        x=np.linspace(xyz[:,0].min(),xyz[:,0].max(),250)
+        probe=mtri.LinearTriInterpolator(mtri.Triangulation(xyz[:,0],xyz[:,1],triangles),values)(x,np.full_like(x,cut))
+        fig,ax=plt.subplots(figsize=(9,3)); ax.plot(x,probe); ax.set(xlabel='x (µm)',ylabel=name)
+        st.pyplot(fig); plt.close(fig)
+        csv=io.StringIO(); np.savetxt(csv,np.column_stack((x,probe.filled(np.nan))),delimiter=',',header='x_um,value',comments='')
+        st.download_button(t('Download probe CSV','下载探针 CSV'),csv.getvalue(),'probe.csv')
+        if st.button(t('Compute field iteration history','计算场量迭代历史')):
+            history=[]
+            for file in report['files']:
+                pts,tris,data=read_vtu(folder/file)
+                v=available_fields(pts,tris,data,np.deg2rad(phase))[name]
+                history.append(dict(iteration=Path(file).stem,minimum=float(v.min()),maximum=float(v.max())))
+            st.dataframe(history,hide_index=True)
+    if (folder/'longitudinal.json').exists():
+        result=json.loads((folder/'longitudinal.json').read_text())
+        st.markdown(t('#### Longitudinal cavity / spatial hole burning','#### 纵向腔体／空间烧孔'))
+        st.caption(f"MQW temperature: {result['active_temperature_K']:.4f} K · {result['current_source']}")
+        z=np.asarray(result['z_grid'])*1e4
+        fig,axes=plt.subplots(1,2,figsize=(10,3.5))
+        axes[0].plot(z,result['P_plus'],label='Forward'); axes[0].plot(z,result['P_minus'],label='Backward'); axes[0].legend()
+        axes[0].set(xlabel='z (µm)',ylabel='Optical power (W)')
+        axes[1].plot(z,result['N']); axes[1].set(xlabel='z (µm)',ylabel='Carrier density (cm⁻³)')
+        fig.tight_layout(); st.pyplot(fig); plt.close(fig)
+        st.download_button(t('Download quasi-3D results','下载准三维结果'),(folder/'longitudinal.json').read_bytes(),'longitudinal.json')
 
 
 def render_training_jobs(c,t):

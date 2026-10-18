@@ -1,0 +1,231 @@
+{
+  "metadata": {
+    "name": "Reduced telecom laser 2D dynamics model",
+    "version": "task-1.2-geo2d-dynamics",
+    "units": "micrometer",
+    "coordinate_system": "y-z cross-section, ridge direction omitted",
+    "description": "Symmetric reduced cross-section for telecom laser dynamics. The InP substrate, facet coatings, and fine manufacturing details are removed.",
+    "visual_scale": {
+      "y": 1.0,
+      "z": 1.0
+    },
+    "physical_bounds_um": {
+      "width_y": 12.0,
+      "height_z": 4.2299999999999995,
+      "y_min": -6.0,
+      "y_max": 6.0,
+      "z_min": 0.0,
+      "z_max": 4.2299999999999995
+    },
+    "boundary_tags": {
+      "left": "symmetry_or_lateral_neumann",
+      "right": "symmetry_or_lateral_neumann",
+      "bottom": "n_contact",
+      "top_ridge": "p_contact"
+    }
+  },
+  "parameters": {
+    "domain_half_width_um": 6.0,
+    "n_cladding_thickness_um": 1.5,
+    "lower_waveguide_thickness_um": 0.25,
+    "active_mqw_thickness_um": 0.08,
+    "upper_waveguide_thickness_um": 0.25,
+    "p_shoulder_thickness_um": 0.55,
+    "p_ridge_thickness_um": 1.75,
+    "ridge_width_um": 3.0,
+    "dielectric_thickness_um": 0.25,
+    "p_contact_thickness_um": 0.2,
+    "n_contact_thickness_um": 0.2,
+    "vertical_visual_scale": 1.0,
+    "lateral_visual_scale": 1.0
+  },
+  "rectangles": [
+    {
+      "name": "bottom n-contact",
+      "material": "Ti/Pt/Au n-contact",
+      "role": "Electrical n-side boundary contact without modelling the thick substrate.",
+      "region_type": "electrical_contact",
+      "color": "#c8ccd4",
+      "bounds_um": {
+        "y_min": -6.0,
+        "y_max": 6.0,
+        "z_min": 0.0,
+        "z_max": 0.2
+      },
+      "size_um": {
+        "width_y": 12.0,
+        "height_z": 0.2
+      }
+    },
+    {
+      "name": "n-InP lower cladding",
+      "material": "n-InP cladding",
+      "role": "n-side optical confinement and electron transport region.",
+      "region_type": "semiconductor",
+      "color": "#4f86f7",
+      "bounds_um": {
+        "y_min": -6.0,
+        "y_max": 6.0,
+        "z_min": 0.2,
+        "z_max": 1.7
+      },
+      "size_um": {
+        "width_y": 12.0,
+        "height_z": 1.5
+      }
+    },
+    {
+      "name": "lower SCH waveguide",
+      "material": "InGaAsP lower SCH",
+      "role": "Lower separate-confinement optical guide.",
+      "region_type": "semiconductor",
+      "color": "#62d2a2",
+      "bounds_um": {
+        "y_min": -6.0,
+        "y_max": 6.0,
+        "z_min": 1.7,
+        "z_max": 1.95
+      },
+      "size_um": {
+        "width_y": 12.0,
+        "height_z": 0.25
+      }
+    },
+    {
+      "name": "MQW active region",
+      "material": "InGaAsP MQW active",
+      "role": "Reduced recombination and photon-generation layer.",
+      "region_type": "active",
+      "color": "#ff4f81",
+      "bounds_um": {
+        "y_min": -6.0,
+        "y_max": 6.0,
+        "z_min": 1.95,
+        "z_max": 2.03
+      },
+      "size_um": {
+        "width_y": 12.0,
+        "height_z": 0.07999999999999985
+      }
+    },
+    {
+      "name": "upper SCH waveguide",
+      "material": "InGaAsP upper SCH",
+      "role": "Upper separate-confinement optical guide.",
+      "region_type": "semiconductor",
+      "color": "#62d2a2",
+      "bounds_um": {
+        "y_min": -6.0,
+        "y_max": 6.0,
+        "z_min": 2.03,
+        "z_max": 2.28
+      },
+      "size_um": {
+        "width_y": 12.0,
+        "height_z": 0.25
+      }
+    },
+    {
+      "name": "left p-InP shoulder",
+      "material": "p-InP",
+      "role": "Symmetric etched p-side shoulder retained as a current-spreading region.",
+      "region_type": "semiconductor",
+      "color": "#b75cff",
+      "bounds_um": {
+        "y_min": -6.0,
+        "y_max": -1.5,
+        "z_min": 2.28,
+        "z_max": 2.83
+      },
+      "size_um": {
+        "width_y": 4.5,
+        "height_z": 0.5500000000000003
+      }
+    },
+    {
+      "name": "left SiN shoulder",
+      "material": "SiN dielectric",
+      "role": "Symmetric current-blocking and passivation region.",
+      "region_type": "dielectric",
+      "color": "#8ed6ff",
+      "bounds_um": {
+        "y_min": -6.0,
+        "y_max": -1.5,
+        "z_min": 2.83,
+        "z_max": 3.08
+      },
+      "size_um": {
+        "width_y": 4.5,
+        "height_z": 0.25
+      }
+    },
+    {
+      "name": "right p-InP shoulder",
+      "material": "p-InP",
+      "role": "Symmetric etched p-side shoulder retained as a current-spreading region.",
+      "region_type": "semiconductor",
+      "color": "#b75cff",
+      "bounds_um": {
+        "y_min": 1.5,
+        "y_max": 6.0,
+        "z_min": 2.28,
+        "z_max": 2.83
+      },
+      "size_um": {
+        "width_y": 4.5,
+        "height_z": 0.5500000000000003
+      }
+    },
+    {
+      "name": "right SiN shoulder",
+      "material": "SiN dielectric",
+      "role": "Symmetric current-blocking and passivation region.",
+      "region_type": "dielectric",
+      "color": "#8ed6ff",
+      "bounds_um": {
+        "y_min": 1.5,
+        "y_max": 6.0,
+        "z_min": 2.83,
+        "z_max": 3.08
+      },
+      "size_um": {
+        "width_y": 4.5,
+        "height_z": 0.25
+      }
+    },
+    {
+      "name": "p-InP ridge",
+      "material": "p-InP",
+      "role": "Central p-side ridge for optical and current confinement.",
+      "region_type": "semiconductor",
+      "color": "#b75cff",
+      "bounds_um": {
+        "y_min": -1.5,
+        "y_max": 1.5,
+        "z_min": 2.28,
+        "z_max": 4.029999999999999
+      },
+      "size_um": {
+        "width_y": 3.0,
+        "height_z": 1.7499999999999996
+      }
+    },
+    {
+      "name": "top p-contact",
+      "material": "Au p-contact",
+      "role": "Electrical p-side injection boundary contact.",
+      "region_type": "electrical_contact",
+      "color": "#f2b84b",
+      "bounds_um": {
+        "y_min": -1.5,
+        "y_max": 1.5,
+        "z_min": 4.029999999999999,
+        "z_max": 4.2299999999999995
+      },
+      "size_um": {
+        "width_y": 3.0,
+        "height_z": 0.20000000000000018
+      }
+    }
+  ]
+}

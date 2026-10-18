@@ -12,6 +12,23 @@ from cae_training import ValidatedSurrogate, evaluate
 
 
 class CAETests(unittest.TestCase):
+    def test_mqw_thermal_handoff_and_mesh_coordinates(self):
+        from cae_mesh import longitudinal_from_fields
+        from device_model import default_config
+        with tempfile.TemporaryDirectory() as directory:
+            folder=Path(directory)
+            mesh=folder/'case/mesh'; mesh.mkdir(parents=True)
+            (mesh/'mesh.nodes').write_text('1 -1 0 0 0\n2 -1 1 0 0\n3 -1 0 1 0\n')
+            (mesh/'mesh.elements').write_text('1 4 303 1 2 3\n')
+            points=np.array([[0.,0,0],[1e-4,0,0],[0,1e-4,0]])
+            longitudinal_from_fields(folder,default_config(),points,{'temperature':np.array([300.,303.,306.])})
+            result=json.loads((folder/'longitudinal.json').read_text())
+            self.assertAlmostEqual(result['active_temperature_K'],303.)
+            self.assertEqual(len(result['P_plus']),51)
+            self.assertEqual(len(result['P_minus']),51)
+            with self.assertRaisesRegex(ValueError,'coordinates'):
+                longitudinal_from_fields(folder,default_config(),points+1.,{'temperature':np.ones(3)*300})
+
     def test_linear_potential_gradient_and_em_phase(self):
         points = np.array([[0.,0,0],[2,0,0],[0,3,0],[2,3,0]])
         triangles = np.array([[0,1,2],[1,3,2]])
