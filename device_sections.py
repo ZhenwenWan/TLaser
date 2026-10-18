@@ -47,15 +47,10 @@ def compare_nominal(config, surrogate):
 
 def render_simulator_core(c, t):
     st.subheader(t("Simulator core", "模拟器内核"))
-    st.write(t("Solve longitudinal carrier and photon distributions, then sweep current to generate L-I-V data for this device.",
-               "求解器件纵向载流子与光子分布，通过电流扫描生成 L-I-V 数据。"))
-    st.caption(t("This sweep uses the reduced longitudinal engine with 51 cavity nodes. Coupled transverse field solves are configured below using the Lasers Elmer runtime.",
-                 "此扫描使用 51 个腔轴节点的纵向降阶内核。下方可使用 Lasers Elmer 运行时配置耦合横截面空间场求解。"))
-    with st.expander(t("Equations and physical constants", "方程与物理常数")):
-        st.latex(r"G_{\mathrm{inj}}-R_{\mathrm{rec}}(N)-R_{\mathrm{stim}}(N,P)=0")
-        st.latex(r"\frac{dP^{\pm}}{dz}=\pm\left(\Gamma g(N)-\alpha_i\right)P^{\pm}")
-        st.caption(t("Steady-state CW; facet reflectivities set the optical boundary conditions.",
-                     "稳态连续波；端面反射率给出光学边界条件。"))
+    st.write(t("Solve both transverse and longitudinal carrier, voltage, temperature, photon and electromagnetic field distributions.",
+               "求解横向和纵向的载流子、电压、温度、光子及电磁场分布。"))
+    st.caption(t("The solver couples transverse and longitudinal distributions",
+                 "求解器耦合横向与纵向分布"))
     fit = st.session_state.ridge_fit
     applied = st.session_state.ridge_applied and fit is not None
     active = fit["estimated"] if applied else c
