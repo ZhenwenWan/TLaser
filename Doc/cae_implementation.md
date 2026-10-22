@@ -44,19 +44,58 @@ restoration from a saved run, independent persistent jobs, and result visualizat
 Solver configurations snapshot the device rather than silently following later
 edits. Use **Use current Device model** to explicitly refresh that snapshot.
 
-The 2D workspace runs Elmer without an implicit longitudinal solve. The 1D
-workspace runs at its specified temperature, with configurable cavity resolution
-and frequency. The fourth workspace iterates an **optothermal feedback** closure:
+The 2D workspace runs Elmer's coupled Poisson/electron/hole, heat and vector
+EM equations without an implicit longitudinal solve. The 1D workspace now solves
+the following three coupled equation sets, rather than the reduced carrier-rate
+model used for PINN training:
+
+* Poisson plus separate electron/hole drift-diffusion continuity, using
+  Scharfetter–Gummel fluxes, SRH/radiative/Auger recombination, uniform transverse
+  pair injection and unity-yield photogeneration from absorbed probe light.
+  Axial potential endpoints are prescribed; carrier facets have zero flux.
+* Axial heat conduction, nonradiative recombination heating and axial Joule heat,
+  with insulated thermal facets and a configurable distributed transverse heat
+  sink. Absorbed photon energy enters through photogeneration/nonradiative
+  recombination, rather than adding the same energy twice.
+* Complex scalar Helmholtz waves with partially reflecting facets and a
+  prescribed incident optical probe. Drude carrier dispersion and temperature
+  modify refractive index; wave absorption modifies the continuity equations.
+  A separate optical grid resolves each wavelength with at least 24 nodes;
+  exponentially fitted differences preserve uniform-medium phase propagation.
+
+This longitudinal wave model is a **passive driven cavity**, not a self-lasing
+eigenmode or stimulated-emission laser-power prediction. Its transmitted probe
+power is labeled accordingly. Optical amplitudes have units sqrt(W); they are
+power-normalized, not electric field in V/cm. The electrostatic field is V/cm.
+Default mobility, permittivity, effective masses and thermo-optic coefficient
+are explicit assumptions saved with the result, not a calibrated material library.
+The configured series/shunt resistance and confinement factor belong to the
+separate reduced laser predictor; this axial field model does not use them.
+
+Configuration includes axial bias, probe power, thermal conductivity, effective
+transverse heat conductance, refractive index, iteration limit and residual
+tolerance. Each run saves separate carrier, potential, temperature, photon and
+complex wave arrays, plus residuals for all equation sets. Convergence requires
+both PDE residuals and the unrelaxed optical-source mismatch to pass. Reaching
+an iteration limit is never reported as convergence. Older configuration files
+receive the new options' defaults. Cancellation is checked between outer solves.
+
+The fourth workspace uses this complete 1D member and the complete 2D member
+in an **optothermal feedback** closure:
 
 1. Run the transverse carrier/thermal/EM solvers with the currently applied
    optical-absorption heat source.
-2. Area-average the computed MQW temperature and solve longitudinal transport.
+2. Area-average the computed MQW temperature and use it as the effective heat-sink
+   reference for the longitudinal multiphysics solve. This averaged closure is
+   not a pointwise 3D heat-flux match; its effective thermal conductance requires
+   calibration and it must not be interpreted as a validated absolute temperature.
 3. Integrate forward plus backward cavity power along the longitudinal grid.
    Return `fraction × alpha_i × mean_power / actual_mesh_MQW_area` in W/cm³
    as uniform MQW optical heating, replacing the transverse photon-heating term
    to avoid double counting it. Other transverse thermal sources remain active.
 4. Relax the returned heat source and repeat. Stop only when both the unrelaxed
-   heat mismatch and relative MQW-temperature change pass the specified tolerance.
+   heat mismatch and relative MQW-temperature change pass the specified tolerance,
+   and the longitudinal multiphysics solve itself has converged.
 
 Every feedback iterate saves its generated SIF, mesh fields, longitudinal profiles,
 and diagnostics. The UI exposes the residual history and lets you inspect each
@@ -68,6 +107,14 @@ This is cavity-averaged optical-loss/thermal two-way coupling, not spatially
 resolved 3D feedback or an electrical current-matching loop. Active current remains
 a user-configured input; no transverse current extraction is implied. The loss
 deposition fraction is an explicit modeling assumption requiring calibration.
+
+Validation: an analytical lossy Fabry–Perot transmission check, integrated
+electron/hole generation/recombination balance, default-device coupled residuals,
+zero-drive Maxwell response, cancellation, iteration-limit reporting and
+Streamlit workspace/configuration tests. These are numerical checks, not
+measured-device qualification. The reduced current sweep, PINN dataset generator,
+prediction and calibration backend remain unchanged; new field results must not
+be confused with training targets from that reduced backend.
 
 Earlier release notes below describe the preceding implementation.
 

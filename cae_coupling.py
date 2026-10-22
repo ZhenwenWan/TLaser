@@ -7,10 +7,10 @@ from cae_elmer import run_fields
 from cae_fields import read_vtu
 from cae_mesh import mqw_temperature
 from device_model import validate_config
-from simulator.quasi_3d_synthesizer import Quasi3DSimulator
+from simulator.longitudinal_multiphysics import solve as solve_multiphysics
 
 
-def solve_1d(settings, temperature=None):
+def solve_1d(settings, temperature=None, check=lambda: None):
     c=validate_config(settings['configuration'])
     nodes=settings.get('nodes',51)
     frequency=float(settings.get('frequency',1.934e14))
@@ -19,25 +19,18 @@ def solve_1d(settings, temperature=None):
         raise ValueError('Cavity nodes must be an integer in [11, 401]')
     if not np.isfinite([frequency,temp]).all() or not 1e13<=frequency<=1e15 or not 250<=temp<=450:
         raise ValueError('Temperature/frequency outside the supported solver range')
-    g,o,p=c['geometry'],c['optical'],c['physical']
-    sim=Quasi3DSimulator(L_cavity=g['L_um']*1e-4,w_active=g['w_um']*1e-4,d_active=g['d_um']*1e-4,
-        R1=o['R1'],R2=o['R2'],T0=temp,alpha_i=p['alpha_i'],M=nodes)
-    sim.Gamma=p['Gamma']; sim.C_recomb*=p['C_mult']
-    sim.R_series,sim.R_shunt=p['R_series'],p['R_shunt']
-    raw=sim.solve_longitudinal(c['operating']['I_active_A']/sim.L_cavity,freq=frequency)
-    if not all(np.isfinite(v).all() for v in raw.values()):
-        raise ValueError('Nonfinite longitudinal output')
-    report={k:v.tolist() if isinstance(v,np.ndarray) else float(v) for k,v in raw.items()}
-    report.update(active_temperature_K=temp,current_source='Configured active-region current',nodes=nodes,
+    report=solve_multiphysics(c,settings,temp,check)
+    report.update(heat_sink_temperature_K=temp,current_source='Configured transverse active-region pair injection',nodes=nodes,
                   frequency=frequency,configuration=c)
     return report
 
 
 def run_longitudinal(folder,settings):
     check_cancel(folder)
-    result=solve_1d(settings)
+    result=solve_1d(settings,check=lambda:check_cancel(folder))
     write_json(folder/'longitudinal.json',result)
-    return 'candidate','1D solve finished; review physical validity and discretization'
+    return 'candidate',('1D multiphysics residuals passed; driven optical model requires validation' if result['converged']
+                        else '1D multiphysics iteration limit reached; residuals have not converged')
 
 
 def heat_target(result, area_cm2, fraction):
@@ -59,7 +52,7 @@ def run_coupled(folder,settings):
         raise ValueError('Invalid coupling configuration')
     if not 0<relaxation<=1 or not 1e-6<=tolerance<=.1 or not 0<fraction<=1:
         raise ValueError('Invalid relaxation, tolerance or absorption fraction')
-    solve_1d(settings)  # Validate all 1D inputs before launching an external solver.
+    solve_1d(settings,check=lambda:check_cancel(folder))  # Validate before launching an external solver.
     history=[]; heat=0.; previous_temperature=None; converged=False
     for iteration in range(1,count+1):
         check_cancel(folder)
@@ -70,7 +63,7 @@ def run_coupled(folder,settings):
         field_report=json.loads((step/'fields.json').read_text())
         points,_,fields=read_vtu(step/field_report['files'][-1])
         temp,area=mqw_temperature(step,points,fields)
-        result=solve_1d(settings,temp)
+        result=solve_1d(settings,temp,check=lambda:check_cancel(folder))
         target=heat_target(result,area,fraction)
         if not np.isfinite(target) or target>1e10:
             raise ValueError('Optical heating outside supported range')
@@ -78,12 +71,12 @@ def run_coupled(folder,settings):
         delta_t=None if previous_temperature is None else abs(temp-previous_temperature)/max(abs(temp),1.)
         history.append(dict(iteration=iteration,temperature_K=temp,power_W=result['P_opt'],
             heat_applied_W_cm3=heat,heat_target_W_cm3=target,heat_residual=residual,
-            temperature_residual=delta_t,area_cm2=area,folder=step.name))
+            temperature_residual=delta_t,longitudinal_converged=result.get('converged',False),area_cm2=area,folder=step.name))
         write_json(step/'longitudinal.json',result)
         write_json(folder/'longitudinal.json',result)
-        converged=delta_t is not None and residual<=tolerance and delta_t<=tolerance
+        converged=delta_t is not None and residual<=tolerance and delta_t<=tolerance and result.get('converged',False)
         write_json(folder/'coupling.json',dict(history=history,converged=converged,
-            scope='Cavity-averaged optical absorption ↔ MQW temperature; electrical current remains configured',
+            scope='Both members solve electrical, thermal and wave fields. Inter-dimensional exchange: cavity-averaged optical absorption ↔ MQW temperature; electrical current remains configured.',
             final_folder=step.name,tolerance=tolerance))
         write_json(folder/'progress.json',dict(done=iteration,total=count,stage='optothermal feedback',heat_residual=residual))
         if converged:

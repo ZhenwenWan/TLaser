@@ -12,6 +12,7 @@ from cae_jobs import start_job, read_jobs, job_path
 from cae_elmer import detect_lasers
 from cae_mesh import read_mesh
 from device_model import validate_config
+from simulator.longitudinal_multiphysics import DEFAULTS as MULTIPHYSICS
 
 
 def decode_configuration(data,kind,defaults):
@@ -19,6 +20,7 @@ def decode_configuration(data,kind,defaults):
     if doc.get('schema_version')!=1 or doc.get('kind')!=kind or not isinstance(doc.get('settings'),dict):
         raise ValueError('Configuration kind or schema version does not match this section')
     values=doc['settings']
+    values={**{k:v for k,v in defaults.items() if k in MULTIPHYSICS},**values}
     if set(values)!=set(defaults):
         raise ValueError('Configuration fields do not match this section')
     for key,value in values.items():
@@ -43,6 +45,13 @@ def decode_configuration(data,kind,defaults):
 
 
 NUMBERS={
+ 'axial_bias':(-1.,1.,'Axial potential difference (V)','轴向电势差 (V)'),
+ 'optical_input_W':(0.,1.,'Incident optical probe power (W)','入射光探针功率 (W)'),
+ 'thermal_conductivity':(.001,10.,'Axial thermal conductivity (W/cm/K)','轴向热导率 (W/cm/K)'),
+ 'thermal_sink':(1e3,1e9,'Effective transverse heat conductance (W/cm³/K)','有效横向散热系数 (W/cm³/K)'),
+ 'refractive_index':(1.5,5.,'Background refractive index','背景折射率'),
+ 'multiphysics_iterations':(2,100,'Maximum 1D multiphysics iterations','最大一维多物理迭代数'),
+ 'multiphysics_tolerance':(1e-7,.01,'1D multiphysics residual tolerance','一维多物理残差容差'),
  'scale':(.5,3.,'Element-size scale','单元尺寸比例'),
  'temperature':(250.,450.,'Temperature / heat sink (K)','温度／热沉 (K)'),
  'p_potential':(-1.,2.,'p-contact potential (V)','p 接触电势 (V)'),
@@ -60,6 +69,8 @@ NUMBERS={
 def configuration_panel(kind,defaults,c,t):
     state=f'workspace_config_{kind}'
     st.session_state.setdefault(state,deepcopy(defaults))
+    for key,value in defaults.items():
+        st.session_state[state].setdefault(key,deepcopy(value))
     def install(values):
         st.session_state[state]=deepcopy(values)
         for key,value in values.items():
@@ -127,7 +138,43 @@ def longitudinal_view(folder,t):
     axes[0].set(xlabel='z (µm)',ylabel='Power (W)')
     axes[1].plot(z,result['N']); axes[1].set(xlabel='z (µm)',ylabel='Carriers (cm⁻³)')
     fig.tight_layout(); st.pyplot(fig); plt.close(fig)
-    st.metric(t('Both-facet power (mW)','双端面光功率 (mW)'),f"{1000*result['P_opt']:.4g}")
+    multiphysics='electron_density_cm3' in result
+    st.metric(t('Transmitted probe power (mW)' if multiphysics else 'Both-facet power (mW)',
+                '透射探针光功率 (mW)' if multiphysics else '双端面光功率 (mW)'),f"{1000*result['P_opt']:.4g}")
+    if multiphysics:
+        st.caption(t('Driven passive optical cavity; these fields do not predict self-lasing output. Optical amplitudes are power-normalized (√W).',
+                     '受驱动的无源光腔；这些场不预测自激激光输出。光场振幅以功率归一化 (√W)。'))
+        if result['converged']:
+            st.success(t('1D electrical, thermal and optical feedback residuals passed.','一维电学、热学及光学反馈残差达标。'))
+        else:
+            st.warning(t('1D multiphysics residuals have not converged.','一维多物理残差尚未收敛。'))
+        fig,axes=plt.subplots(2,2,figsize=(10,7))
+        axes[0,0].plot(z,result['electron_density_cm3'],label='Electrons')
+        axes[0,0].plot(z,result['hole_density_cm3'],label='Holes',linestyle='--'); axes[0,0].legend()
+        axes[0,0].set(ylabel='Density (cm⁻³)')
+        axes[0,1].plot(z,result['potential_V']); axes[0,1].set(ylabel='Potential (V)')
+        axes[1,0].plot(z,result['temperature_K']); axes[1,0].set(ylabel='Temperature (K)')
+        axes[1,1].plot(z,result['electric_field_V_cm']); axes[1,1].set(ylabel='Electrical field (V/cm)')
+        for ax in axes.flat: ax.set_xlabel('z (µm)')
+        fig.tight_layout(); st.pyplot(fig); plt.close(fig)
+        wave_z=np.asarray(result['wave_z_cm'])*1e4
+        end=min(len(wave_z)-1,500)
+        limits=st.slider(t('Optical field window (µm)','光场显示区间 (µm)'),0.,float(wave_z[-1]),
+                         (0.,float(wave_z[end])),key=f'wave_window_{folder.name}')
+        select=(wave_z>=limits[0])&(wave_z<=limits[1])
+        fig,ax=plt.subplots(figsize=(10,3))
+        for key in ('EM_real','EM_imag'):
+            ax.plot(wave_z[select],np.asarray(result[key])[select],label=key)
+        ax.set(xlabel='z (µm)',ylabel='Optical amplitude (√W)'); ax.legend()
+        st.pyplot(fig); plt.close(fig)
+        st.dataframe(result['residual_history'],hide_index=True)
+        data=io.StringIO()
+        fields=['electron_density_cm3','hole_density_cm3','potential_V','electric_field_V_cm','temperature_K','photon_density_cm3']
+        np.savetxt(data,np.column_stack([z]+[result[k] for k in fields]),delimiter=',',header='z_um,'+','.join(fields),comments='')
+        st.download_button(t('Download coupled fields CSV','下载耦合场 CSV'),data.getvalue(),'longitudinal_fields.csv')
+        data=io.StringIO()
+        np.savetxt(data,np.column_stack((wave_z,result['EM_real'],result['EM_imag'])),delimiter=',',header='z_um,real_sqrt_W,imag_sqrt_W',comments='')
+        st.download_button(t('Download optical wave CSV','下载电磁波 CSV'),data.getvalue(),'longitudinal_wave.csv')
     csv=io.StringIO(); np.savetxt(csv,np.column_stack((z,result['N'],result['P_plus'],result['P_minus'])),
         delimiter=',',header='z_um,N_cm-3,P_forward_W,P_backward_W',comments='')
     st.download_button(t('Download longitudinal CSV','下载纵向 CSV'),csv.getvalue(),'longitudinal.csv')
@@ -145,9 +192,9 @@ def render_workspace(c,t):
     kind=['mesh','fields','longitudinal','coupled'][choice]
     transverse=dict(lasers_root=detect_lasers(),mesh_job=None,temperature=float(c['operating']['T0_K']),
         p_potential=.57724,frequency=1.934e14,em_drive=0.,iterations=15,tolerance=1e-4,configuration=deepcopy(c))
-    longitudinal=dict(temperature=float(c['operating']['T0_K']),frequency=1.934e14,nodes=51,configuration=deepcopy(c))
+    longitudinal=dict(temperature=float(c['operating']['T0_K']),frequency=1.934e14,nodes=51,configuration=deepcopy(c),**MULTIPHYSICS)
     defaults=[dict(gmsh='C:/gmsh/gmsh.exe',scale=1.),transverse,longitudinal,
-              dict(**transverse,nodes=51,outer_iterations=8,outer_tolerance=.01,relaxation=.5,absorption_fraction=1.)][choice]
+              dict(**transverse,nodes=51,outer_iterations=8,outer_tolerance=.01,relaxation=.5,absorption_fraction=1.,**MULTIPHYSICS)][choice]
     if choice==0:
         st.caption(t('Refine the Lasers 11-region transverse geometry; element-size scale does not change dimensions.',
                      '细化 Lasers 11 区域横截面网格；单元尺寸比例不改变几何尺寸。'))
@@ -155,11 +202,11 @@ def render_workspace(c,t):
         st.caption(t('Independent carrier, potential, thermal and EM field solve. Contact potential is not terminal bias.',
                      '独立求解载流子、电势、温度和电磁场；接触电势不等同端口偏压。'))
     elif choice==2:
-        st.caption(t('Independent longitudinal carrier and forward/backward optical transport at a specified temperature.',
-                     '在指定温度下独立求解纵向载流子及双向光传播。'))
+        st.caption(t('Coupled Poisson + electron/hole drift-diffusion, heat transport and scalar Maxwell waves. Uniform transverse injection, insulating facets and an effective transverse heat sink; optical probe boundaries, not a self-lasing solution.',
+                     '耦合泊松方程、电子／空穴漂移扩散、热输运及标量麦克斯韦波动方程。采用均匀横向注入、绝缘端面及有效横向散热；光学边界为探针激励，不是自激激光解。'))
     else:
-        st.caption(t('Optothermal feedback: 2D MQW temperature → 1D optical transport → cavity-averaged absorption heat → next 2D solve. Current remains configured; transverse electrical feedback is not included.',
-                     '光热反馈：二维 MQW 温度 → 一维光传播 → 腔平均吸收热 → 下一次二维求解。电流采用配置值，尚不包含横向电学反馈。'))
+        st.caption(t('Both solvers include electrical, thermal and wave equations. Cross-dimensional exchange remains MQW temperature ↔ probe absorption heat; current remains configured. This is an averaged optothermal coupling, not a full 3D laser solution.',
+                     '两个求解器均包含电学、热学及波动方程。跨维度交换为 MQW 温度 ↔ 探针吸收热，电流采用配置值。这是平均光热耦合，而非完整三维激光解。'))
     settings=configuration_panel(kind,defaults,c,t)
     if settings is not None and st.button(t('Run configured task','运行配置任务'),key=f'run_{kind}',type='primary'):
         try:
