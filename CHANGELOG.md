@@ -4,6 +4,28 @@ All notable changes to the **TLaser** digital twin platform will be documented i
 
 ---
 
+## 2026-10-22 — Saved solver validation results
+
+* Added independent carrier, mirror, gain, integrated photon-transport, field
+  finiteness, transverse steady-state and outer-feedback validation checks.
+  New longitudinal and coupled jobs save downloadable `validation.json` reports.
+* Added shipped **Included validation example** results for workspaces 3 and 4,
+  including input snapshots, check tables, PNG/CSV curves, reference comparisons,
+  grid refinement, actual VTU fields and solver logs. They are available without
+  local jobs or an installed solver runtime.
+* Added `validate_solvers.py` to reproduce and package the examples from the
+  actual Lasers reference source and a completed coupled job.
+* Verified 30 software tests, including example rendering without local jobs,
+  rejection of corrupted carrier/mirror data, and preservation of a failed
+  transverse diagnostic despite converged outer feedback. Updated the main-tab
+  test to account for the nested visualization/configuration tabs.
+* Longitudinal numerical checks passed. The stricter coupled example converged
+  in three outer iterations with its final transverse solve converged after 11
+  iterations, but **full acceptance remains incomplete**: the Elmer log contains
+  a NaN Poynting-vector diagnostic. The report preserves this failed check.
+* See [the validation report](Doc/solver_validation.md) for measured numerical
+  values, acceptance thresholds, plots, reproduction instructions and limitations.
+
 ## 2026-10-22 — CAE workspaces, Lasers methodology, and visualization
 
 ### Implemented

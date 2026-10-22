@@ -1,0 +1,12 @@
+{
+  "backend": "Lasers Elmer coupled transverse FEM/FVM",
+  "template_sha256": "2d0e878e956da4143b3ca01316ad1dbde3e84ec524d9579ecf0813b5e4771902",
+  "runtime": "C:\\Users\\aw4wz\\Documents\\Codex\\Lasers\\tools\\elmer-9.0-ucrt\\bin\\ElmerSolver.exe",
+  "custom_libraries": {
+    "CarriersFVMSolve_e12e17.dll": "29a608406a023a503f0de216fc14fb2ac7910d3c05d9abb604e9b4d58bed2d34",
+    "ThermoSolve.dll": "53455719d13cd92d4d352d85e1b24bb41043ff7885bdb7e240fa8b430ac13301",
+    "EMWaveSolve.dll": "6e44fbbc00109830e113d8fa483e2c93930a4f1cd969adc7f156676938652c88"
+  },
+  "mesh": "C:\\Users\\aw4wz\\Documents\\Codex\\TLaser\\assets\\elmer\\mesh",
+  "coordinate_unit": "cm"
+}

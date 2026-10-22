@@ -35,6 +35,10 @@ Training/test errors are against a simulator, not experimental accuracy.
 
 ## Operating guide
 
+See [longitudinal and two-way validation results](solver_validation.md) for the
+included field/curve examples, numerical acceptance criteria, reproduction steps,
+and the outstanding Poynting-vector diagnostic failure in the coupled run.
+
 ### Four solver workspaces (2026-10-22)
 
 Simulator core now separates **Mesher · Lasers / Gmsh**, **Transverse 2D

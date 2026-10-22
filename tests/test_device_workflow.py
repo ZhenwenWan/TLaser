@@ -79,7 +79,10 @@ class DeviceUITests(unittest.TestCase):
         from streamlit.testing.v1 import AppTest
         app = AppTest.from_file(str(Path(__file__).resolve().parents[1]/"app.py"), default_timeout=90).run()
         self.assertFalse(app.exception)
-        self.assertEqual([tab.label for tab in app.tabs], ["1. Device model", "2. Simulator core", "3. PINN surrogate", "4. Instant Performance Prediction", "5. Instant Parameter Calibration"])
+        # AppTest flattens nested tabs as well as the five main sections.
+        self.assertEqual([tab.label for tab in app.tabs if tab.label[:2] in {'1.','2.','3.','4.','5.'}], ["1. Device model", "2. Simulator core", "3. PINN surrogate", "4. Instant Performance Prediction", "5. Instant Parameter Calibration"])
+        self.assertIn('Visualization & results',[tab.label for tab in app.tabs])
+        self.assertIn('Configure & run',[tab.label for tab in app.tabs])
         app.number_input(key="ridge_L_um").set_value(520.)
         next(b for b in app.button if b.label == "Update device").click().run()
         self.assertFalse(app.exception)

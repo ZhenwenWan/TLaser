@@ -8,6 +8,7 @@ from cae_fields import read_vtu
 from cae_mesh import mqw_temperature
 from device_model import validate_config
 from simulator.lasers_longitudinal import solve as solve_active_laser
+from cae_validation import longitudinal_validation, coupled_validation
 
 
 def solve_1d(settings, temperature=None, check=lambda: None):
@@ -31,8 +32,10 @@ def run_longitudinal(folder,settings):
     check_cancel(folder)
     result=solve_1d(settings,check=lambda:check_cancel(folder))
     write_json(folder/'longitudinal.json',result)
-    return 'candidate',('Lasers active-laser carrier, mirror and transport residuals passed' if result['converged']
-                        else 'Active-laser solve has not converged; inspect residuals')
+    validation=longitudinal_validation(result)
+    write_json(folder/'validation.json',validation)
+    return 'candidate',('Longitudinal numerical validation checks passed; physical qualification remains separate' if validation['numerical_checks_passed']
+                        else 'Longitudinal numerical validation checks failed; inspect validation report')
 
 
 def heat_target(result, area_cm2, fraction):
@@ -85,5 +88,9 @@ def run_coupled(folder,settings):
         if converged:
             break
         heat+=relaxation*(target-heat); previous_temperature=temp
-    return 'candidate',('Outer optothermal loop converged; inspect inner solver convergence' if converged
-                         else 'Outer iteration limit reached; coupling has not converged')
+    validation=coupled_validation(folder,settings)
+    write_json(folder/'validation.json',validation)
+    if not converged:
+        return 'candidate','Outer iteration limit reached; coupling has not converged'
+    return 'candidate',('Coupled numerical checks passed; physical qualification remains separate' if validation['numerical_checks_passed']
+                         else 'Outer loop converged but validation is incomplete; inspect validation report')

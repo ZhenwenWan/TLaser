@@ -3,6 +3,8 @@
 See the [development changelog](CHANGELOG.md) for the latest implemented features,
 validation results, and remaining engineering work, and the
 [CAE operating guide](Doc/cae_implementation.md) for solver setup and visualization.
+The [solver validation report](Doc/solver_validation.md) includes saved curves,
+transverse fields, reference comparisons, and explicitly reported failed checks.
 
 The local dashboard now includes a shared, versioned ridge-device configuration,
 interactive Lasers 15-part 3D geometry, configuration save/load, and fixed-geometry calibration

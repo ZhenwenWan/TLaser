@@ -1,0 +1,21 @@
+{
+  "files": [
+    "case/mesh/laser_coupled_t0010.vtu",
+    "case/mesh/laser_coupled_t0011.vtu"
+  ],
+  "nodes": 1663,
+  "triangles": 3218,
+  "fields": [
+    "empostvar",
+    "photonpopulation",
+    "temperature",
+    "carriers",
+    "electric field re",
+    "electric field im"
+  ],
+  "elapsed_s": 57.25,
+  "warnings": [
+    "VectorHelmholtz:  (Electro) Integral of Divergence of Poynting Vector:                        NaN                       NaN"
+  ],
+  "convergence": "Review nonlinear and coupled convergence in solver.log; exit code alone is insufficient"
+}

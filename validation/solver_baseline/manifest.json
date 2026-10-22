@@ -1,0 +1,8 @@
+{
+  "source_job": "975cf3e5f8da41e4af17d874dc03e701",
+  "reference_source_sha256": "ba0962f8092534e565d0cde6c2912f8c7e467d7c1317102fc8be937f14f3cc56",
+  "tlaser_longitudinal_sha256": "b8a1a2584f4203ca5ef15030953ee45f03aa25d9c880a3baf9fee3ff03650ccf",
+  "longitudinal_checks_passed": true,
+  "coupled_checks_passed": false,
+  "note": "Numerical examples, not measurements. Coupled examples retain final two VTU snapshots per outer iteration. Full local runs are not included."
+}

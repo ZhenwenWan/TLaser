@@ -37,6 +37,7 @@ class WorkspaceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, patch('cae_coupling.run_fields',side_effect=fake_fields), \
              patch('cae_coupling.read_vtu',return_value=(None,None,None)), \
              patch('cae_coupling.mqw_temperature',return_value=(300.,1.)), \
+             patch('cae_coupling.coupled_validation',return_value={'numerical_checks_passed':False}), \
              patch('cae_coupling.solve_1d',return_value=result):
             state,message=run_coupled(Path(tmp),settings)
             report=json.loads((Path(tmp)/'coupling.json').read_text())

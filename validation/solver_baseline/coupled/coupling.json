@@ -1,0 +1,44 @@
+{
+  "history": [
+    {
+      "iteration": 1,
+      "temperature_K": 298.85788498054865,
+      "power_W": 0.002434735620675474,
+      "heat_applied_W_cm3": 0.0,
+      "heat_target_W_cm3": 1686848.646774565,
+      "heat_residual": 1.0,
+      "temperature_residual": null,
+      "longitudinal_converged": true,
+      "area_cm2": 9.599999999999982e-09,
+      "folder": "iteration_001"
+    },
+    {
+      "iteration": 2,
+      "temperature_K": 298.86424329453365,
+      "power_W": 0.002434244826393253,
+      "heat_applied_W_cm3": 1686848.646774565,
+      "heat_target_W_cm3": 1686493.7885681523,
+      "heat_residual": 0.00021036754369829313,
+      "temperature_residual": 2.1274923741003302e-05,
+      "longitudinal_converged": true,
+      "area_cm2": 9.599999999999982e-09,
+      "folder": "iteration_002"
+    },
+    {
+      "iteration": 3,
+      "temperature_K": 298.8642419569512,
+      "power_W": 0.002434244929652354,
+      "heat_applied_W_cm3": 1686493.7885681523,
+      "heat_target_W_cm3": 1686493.8632263935,
+      "heat_residual": 4.426831472729705e-08,
+      "temperature_residual": 4.475551921540756e-09,
+      "longitudinal_converged": true,
+      "area_cm2": 9.599999999999982e-09,
+      "folder": "iteration_003"
+    }
+  ],
+  "converged": true,
+  "scope": "Lasers decomposition: transverse electrical/thermal/vector EM; longitudinal active carrier/photon transport. Mesh MQW area and temperature feed 1D; cavity absorption heat returns to 2D. Active current and confinement remain configured.",
+  "final_folder": "iteration_003",
+  "tolerance": 0.0001
+}

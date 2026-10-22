@@ -1,0 +1,70 @@
+{
+  "kind": "longitudinal",
+  "checks": [
+    {
+      "check": "Local carrier balance",
+      "value": 6.848963590021216e-15,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Rear mirror boundary",
+      "value": 8.258674439108258e-17,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Front mirror boundary",
+      "value": -2.0646686097770644e-17,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Gain consistency",
+      "value": 2.20026278713908e-15,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Facet output accounting",
+      "value": 0.0,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Integrated photon transport",
+      "value": -4.512554113044995e-06,
+      "limit": 0.001,
+      "passed": true
+    },
+    {
+      "check": "Adaptive transport residual",
+      "value": 6.746940530683069e-08,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Finite positive carriers and powers",
+      "value": 0.0,
+      "limit": 0.0,
+      "passed": true
+    },
+    {
+      "check": "Nonlinear solver reported convergence",
+      "value": 0.0,
+      "limit": 0.0,
+      "passed": true
+    }
+  ],
+  "numerical_checks_passed": true,
+  "scope": "Numerical consistency of the Lasers reduced longitudinal equations; not measured-device qualification",
+  "metrics": {
+    "power_W": 0.002434735620675474,
+    "front_power_W": 0.00237555028947454,
+    "rear_power_W": 5.91853312009342e-05,
+    "temperature_K": 298.85788498054865,
+    "active_area_cm2": 9.599999999999982e-09,
+    "minimum_carrier_cm3": 2.2820354860516362e+18,
+    "maximum_carrier_cm3": 3.013744652825638e+18
+  }
+}

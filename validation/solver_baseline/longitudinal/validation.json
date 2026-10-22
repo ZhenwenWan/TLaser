@@ -1,0 +1,108 @@
+{
+  "kind": "longitudinal",
+  "checks": [
+    {
+      "check": "Local carrier balance",
+      "value": 6.8318411810461755e-15,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Rear mirror boundary",
+      "value": -1.203718113931085e-16,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Front mirror boundary",
+      "value": -2.0061968565518082e-17,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Gain consistency",
+      "value": 2.190038142818398e-15,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Facet output accounting",
+      "value": 0.0,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Integrated photon transport",
+      "value": -1.6353297319844594e-05,
+      "limit": 0.001,
+      "passed": true
+    },
+    {
+      "check": "Adaptive transport residual",
+      "value": 5.782066816871733e-07,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Finite positive carriers and powers",
+      "value": 0.0,
+      "limit": 0.0,
+      "passed": true
+    },
+    {
+      "check": "Nonlinear solver reported convergence",
+      "value": 0.0,
+      "limit": 0.0,
+      "passed": true
+    },
+    {
+      "check": "HR-AR Lasers reference power agreement",
+      "value": 0.00021081380466447808,
+      "limit": 0.005,
+      "passed": true
+    },
+    {
+      "check": "Symmetric Lasers reference power agreement",
+      "value": 1.916691129255632e-06,
+      "limit": 0.005,
+      "passed": true
+    },
+    {
+      "check": "Symmetric cavity profile symmetry",
+      "value": 8.868347952589421e-12,
+      "limit": 1e-05,
+      "passed": true
+    },
+    {
+      "check": "Grid refinement power change (31\u2013401 nodes)",
+      "value": 4.308087797610938e-08,
+      "limit": 0.001,
+      "passed": true
+    },
+    {
+      "check": "All current sweep solves converged",
+      "value": 0.0,
+      "limit": 0.0,
+      "passed": true
+    },
+    {
+      "check": "Nondecreasing current\u2013power response",
+      "value": 0.0,
+      "limit": 0.0,
+      "passed": true
+    }
+  ],
+  "numerical_checks_passed": true,
+  "scope": "Numerical consistency of the Lasers reduced longitudinal equations; not measured-device qualification",
+  "metrics": {
+    "power_W": 0.002505684071406052,
+    "front_power_W": 0.0024447870594588588,
+    "rear_power_W": 6.0897011947193096e-05,
+    "temperature_K": 298.0,
+    "active_area_cm2": 9.576000000000001e-09,
+    "minimum_carrier_cm3": 2.2430961825136064e+18,
+    "maximum_carrier_cm3": 2.9925094050023455e+18
+  },
+  "reference_source_sha256": "ba0962f8092534e565d0cde6c2912f8c7e467d7c1317102fc8be937f14f3cc56",
+  "reference_source": "Lasers/Tools/quasi_3d_synthesizer.py"
+}

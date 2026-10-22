@@ -1,0 +1,44 @@
+{
+  "kind": "longitudinal",
+  "settings": {
+    "configuration": {
+      "schema_version": 1,
+      "architecture": "facet_mirror_ridge_edge_emitter",
+      "operating_preset": "steady_state_cw",
+      "geometry": {
+        "L_um": 300.0,
+        "w_um": 2.8,
+        "d_um": 0.342
+      },
+      "optical": {
+        "R1": 0.9,
+        "R2": 0.05
+      },
+      "operating": {
+        "T0_K": 298.0,
+        "I_active_A": 0.15,
+        "current_semantics": "active_region"
+      },
+      "physical": {
+        "alpha_i": 10.0,
+        "Gamma": 0.05,
+        "C_mult": 1.0,
+        "R_series": 0.85,
+        "R_shunt": 150.0
+      },
+      "provenance": {
+        "source": "user_design",
+        "estimated_parameters": []
+      },
+      "backend": {
+        "nominal": "pinn_7d",
+        "fitted": "reduced_longitudinal_v1"
+      }
+    },
+    "temperature": 298.0,
+    "frequency": 193400000000000.0,
+    "nodes": 51,
+    "longitudinal_tolerance": 0.0001,
+    "longitudinal_max_nodes": 4001
+  }
+}

@@ -1,0 +1,283 @@
+{
+  "kind": "coupled",
+  "checks": [
+    {
+      "check": "Outer heat mismatch",
+      "value": 4.426831472729705e-08,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Outer temperature change",
+      "value": 4.475551921540756e-09,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "MQW area handoff",
+      "value": 0.0,
+      "limit": 1e-12,
+      "passed": true
+    },
+    {
+      "check": "MQW temperature handoff",
+      "value": 0.0,
+      "limit": 1e-10,
+      "passed": true
+    },
+    {
+      "check": "Outer loop reported convergence",
+      "value": 0.0,
+      "limit": 0.0,
+      "passed": true
+    },
+    {
+      "check": "Local carrier balance",
+      "value": 6.341632953723348e-15,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Rear mirror boundary",
+      "value": -1.2390509277530077e-16,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Front mirror boundary",
+      "value": 3.097627319382519e-17,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Gain consistency",
+      "value": 1.5233080505796353e-15,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Facet output accounting",
+      "value": 0.0,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Integrated photon transport",
+      "value": -4.5155289276754705e-06,
+      "limit": 0.001,
+      "passed": true
+    },
+    {
+      "check": "Adaptive transport residual",
+      "value": 6.712070651172208e-08,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Finite positive carriers and powers",
+      "value": 0.0,
+      "limit": 0.0,
+      "passed": true
+    },
+    {
+      "check": "Nonlinear solver reported convergence",
+      "value": 0.0,
+      "limit": 0.0,
+      "passed": true
+    },
+    {
+      "check": "Transverse carriers steady-state change",
+      "value": 9.8125963e-06,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Transverse temperature steady-state change",
+      "value": 2.1651495e-05,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Transverse vectorhelmholtz steady-state change",
+      "value": 7.6247401e-05,
+      "limit": 0.0001,
+      "passed": true
+    },
+    {
+      "check": "Finite transverse fields",
+      "value": 0.0,
+      "limit": 0.0,
+      "passed": true
+    },
+    {
+      "check": "Nonfinite solver diagnostics",
+      "value": 1.0,
+      "limit": 0.0,
+      "passed": false
+    }
+  ],
+  "numerical_checks_passed": false,
+  "outer_converged": true,
+  "longitudinal": {
+    "kind": "longitudinal",
+    "checks": [
+      {
+        "check": "Local carrier balance",
+        "value": 6.341632953723348e-15,
+        "limit": 0.0001,
+        "passed": true
+      },
+      {
+        "check": "Rear mirror boundary",
+        "value": -1.2390509277530077e-16,
+        "limit": 0.0001,
+        "passed": true
+      },
+      {
+        "check": "Front mirror boundary",
+        "value": 3.097627319382519e-17,
+        "limit": 0.0001,
+        "passed": true
+      },
+      {
+        "check": "Gain consistency",
+        "value": 1.5233080505796353e-15,
+        "limit": 0.0001,
+        "passed": true
+      },
+      {
+        "check": "Facet output accounting",
+        "value": 0.0,
+        "limit": 0.0001,
+        "passed": true
+      },
+      {
+        "check": "Integrated photon transport",
+        "value": -4.5155289276754705e-06,
+        "limit": 0.001,
+        "passed": true
+      },
+      {
+        "check": "Adaptive transport residual",
+        "value": 6.712070651172208e-08,
+        "limit": 0.0001,
+        "passed": true
+      },
+      {
+        "check": "Finite positive carriers and powers",
+        "value": 0.0,
+        "limit": 0.0,
+        "passed": true
+      },
+      {
+        "check": "Nonlinear solver reported convergence",
+        "value": 0.0,
+        "limit": 0.0,
+        "passed": true
+      }
+    ],
+    "numerical_checks_passed": true,
+    "scope": "Numerical consistency of the Lasers reduced longitudinal equations; not measured-device qualification",
+    "metrics": {
+      "power_W": 0.002434244929652354,
+      "front_power_W": 0.002375071437549147,
+      "rear_power_W": 5.917349210320715e-05,
+      "temperature_K": 298.8642419569512,
+      "active_area_cm2": 9.599999999999982e-09,
+      "minimum_carrier_cm3": 2.2823205858726456e+18,
+      "maximum_carrier_cm3": 3.013909917946231e+18
+    }
+  },
+  "transverse": {
+    "checks": [
+      {
+        "check": "Transverse carriers steady-state change",
+        "value": 9.8125963e-06,
+        "limit": 0.0001,
+        "passed": true
+      },
+      {
+        "check": "Transverse temperature steady-state change",
+        "value": 2.1651495e-05,
+        "limit": 0.0001,
+        "passed": true
+      },
+      {
+        "check": "Transverse vectorhelmholtz steady-state change",
+        "value": 7.6247401e-05,
+        "limit": 0.0001,
+        "passed": true
+      },
+      {
+        "check": "Finite transverse fields",
+        "value": 0.0,
+        "limit": 0.0,
+        "passed": true
+      },
+      {
+        "check": "Nonfinite solver diagnostics",
+        "value": 1.0,
+        "limit": 0.0,
+        "passed": false
+      }
+    ],
+    "steady_state": {
+      "carriers": {
+        "iteration": 11,
+        "relative_change": 9.8125963e-06
+      },
+      "vectorhelmholtz": {
+        "iteration": 11,
+        "relative_change": 7.6247401e-05
+      },
+      "calcfields": {
+        "iteration": 11,
+        "relative_change": 0.0
+      },
+      "empostprocess": {
+        "iteration": 11,
+        "relative_change": 0.0
+      },
+      "temperature": {
+        "iteration": 11,
+        "relative_change": 2.1651495e-05
+      }
+    },
+    "warnings": [
+      "VectorHelmholtz:  (Electro) Integral of Divergence of Poynting Vector:                        NaN                       NaN"
+    ],
+    "field_ranges": {
+      "empostvar": {
+        "minimum": 0.0,
+        "maximum": 0.0
+      },
+      "photonpopulation": {
+        "minimum": 1.4789790768211959e-08,
+        "maximum": 6.558714733808157e+16
+      },
+      "temperature": {
+        "minimum": 298.2930716173456,
+        "maximum": 298.96079495799927
+      },
+      "carriers": {
+        "minimum": 0.483946204424728,
+        "maximum": 8.017226371863629e+19
+      },
+      "electric field re": {
+        "minimum": -420.44251650731206,
+        "maximum": 2553.895038469986
+      },
+      "electric field im": {
+        "minimum": -326.702291899628,
+        "maximum": 63.92976412378027
+      }
+    },
+    "scope": "Final logged steady-state changes and finite-field/diagnostic checks; no experimental qualification"
+  },
+  "metrics": {
+    "power_W": 0.002434244929652354,
+    "temperature_K": 298.8642419569512,
+    "iterations": 3
+  },
+  "scope": "Averaged 1D\u20132D optothermal coupling; all gates include final transverse evidence. Outer convergence alone is insufficient."
+}

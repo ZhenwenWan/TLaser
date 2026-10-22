@@ -196,6 +196,32 @@ def longitudinal_view(folder,t):
     st.download_button(t('Download 1D results','下载一维结果'),(folder/'longitudinal.json').read_bytes(),'longitudinal.json')
 
 
+def validation_view(folder,t):
+    path=folder/'validation.json'
+    if not path.exists():
+        st.caption(t('This older run has no validation report. New longitudinal and coupled runs save one automatically.',
+                     '此历史运行没有验证报告。新的一维及耦合运行会自动保存验证报告。'))
+        return
+    report=json.loads(path.read_text(encoding='utf-8'))
+    st.markdown(t('#### Numerical validation','#### 数值验证'))
+    if report['numerical_checks_passed']:
+        st.success(t('Numerical checks passed. This is not measured-device qualification.',
+                     '数值检查通过。这不代表实测器件认证。'))
+    else:
+        st.warning(t('Validation is incomplete: one or more numerical checks failed. Review the table and solver diagnostics.',
+                     '验证未完成：一项或多项数值检查未通过。请审阅下表及求解器诊断。'))
+    st.dataframe(report['checks'],hide_index=True)
+    st.download_button(t('Download validation report','下载验证报告'),path.read_bytes(),
+                       'validation.json','application/json',key=f'validation_report_{folder.name}')
+    for name in ('reference_comparison.csv','grid_refinement.csv','current_sweep.csv','coupling_history.csv'):
+        if (folder/name).exists():
+            st.download_button(name,(folder/name).read_bytes(),name,'text/csv')
+    if (folder/'validation_curves.png').exists():
+        st.image(str(folder/'validation_curves.png'),caption=t('Saved validation curves','已保存的验证曲线'))
+    if (folder/'transverse_fields.png').exists():
+        st.image(str(folder/'transverse_fields.png'),caption=t('Final transverse fields from the coupled run','耦合运行的最终横向场'))
+
+
 def render_workspace(c,t):
     from cae_ui import jobs_panel,render_spatial_result
     names=[t('1. Mesher · Lasers / Gmsh','1. 网格生成 · Lasers / Gmsh'),
@@ -236,7 +262,20 @@ def render_workspace(c,t):
         st.markdown(t('#### Visualization & results','#### 可视化与结果'))
         st.caption(t('Select a saved run below. New simulations are started in Configure & run; use Refresh job results when a run finishes.',
                      '在下方选择已保存的运行。在“配置与运行”中启动新仿真，完成后点击“刷新任务结果”。'))
-        selected=jobs_panel(kind,t)
+        example=Path(__file__).resolve().parent/'validation/solver_baseline'/kind
+        use_example=False
+        if choice in (2,3) and (example/'validation.json').exists():
+            use_example=st.radio(t('Result source','结果来源'),[False,True],
+                format_func=lambda value:t('Included validation example','内置验证示例') if value else t('My simulation runs','我的仿真运行'),
+                index=0 if read_jobs(kind) else 1,horizontal=True,key=f'result_source_{kind}')
+        if use_example:
+            st.info(t('Included numerical validation example. Its saved inputs are independent of your current device settings.',
+                      '内置数值验证示例，其保存的输入独立于当前器件设置。'))
+            with st.expander(t('Validation example inputs','验证示例输入')):
+                st.json(json.loads((example/'request.json').read_text(encoding='utf-8')))
+            selected=(example,{'state':'candidate'})
+        else:
+            selected=jobs_panel(kind,t)
         if not selected:
             st.info(t('No simulation results are saved for this section in this local checkout. Open Configure & run, set the inputs, and select Run configured task. Then return here and refresh. Git updates include code, not saved simulation results.',
                       '当前本地项目中尚无此模块的仿真结果。请打开“配置与运行”，设置输入并点击“运行配置任务”，然后返回此处刷新。Git 更新包含代码，不包含已保存的仿真结果。'))
@@ -246,6 +285,8 @@ def render_workspace(c,t):
             st.info(t('Plots appear when the selected run finishes and produces results. Refresh a running job, choose a completed run, or inspect Settings and logs if the job failed.',
                       '所选运行完成并产生结果后将显示图形。运行中请刷新，也可选择已完成的运行；若失败，请查看“设置与日志”。'))
             return
+        if choice in (2,3):
+            validation_view(folder,t)
         if choice==0:
             xyz,tri,bodies=read_mesh(folder/'mesh')
             st.json(json.loads((folder/'mesh.json').read_text()),expanded=False)

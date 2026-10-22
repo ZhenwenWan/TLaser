@@ -1,0 +1,376 @@
+Header
+  Check Keywords ignore
+  Echo off
+  Numbering off
+  Mesh DB "." "mesh"
+End
+
+$C0    = 2.99792e10
+$eps0c = 8.8541878176204e-14
+$kb    = 1.3806488e-23
+$q0    = 1.60213377e-19
+$tm = 298
+$Vt    = kb*tm/q0
+$n0    = 1e+18
+$ni    = 1.05494e+10
+$T0 = 298
+$ni2   = 1.1129e20
+
+Simulation
+  Coordinate System = String "Cartesian 2D"
+  Coordinate Mapping(3) = Integer 1 2 3
+  Coordinate Scaling = Real 1.0e-4
+  Simulation Type = String "Steady"
+  Steady State Max Iterations = Integer 15
+  Steady State Min Iterations = Integer 3
+  Steady State Convergence Tolerance = Real 0.0001
+  Output Intervals = Integer 1
+  Post File = File "laser_coupled.vtu"
+  Output File = File "laser_coupled.result"
+  max output level = Integer 15
+End
+
+Constants
+  Working temperature = Real $tm
+  Electrons and holes norm = Real $n0
+  Potential Scale = Real $Vt
+End
+
+Body Force 1
+  Name = String "passive optical thermal sources"
+  Spontaneous Recombination Rate = Real 0.0
+  Stimulated Recombination Rate = Real 0.0
+  External Photon Source = Real 0.0
+  Heat Source = Real 1.0e-6
+End
+
+Body Force 2
+  Name = String "MQW coupled generation sources"
+  ! Recombination rates are expressed in cm^-3 s^-1, as functions of the
+  ! solved carrier, photon and temperature fields.
+  Spontaneous Recombination Rate = Variable Coordinate, Carriers
+  Real MATC " n=tx[4];p=tx[5];z=n*p-1.1129e20;1e-10*0.5*(z+abs(z)); "
+  Stimulated Recombination Rate = Variable Coordinate, Carriers, PhotonPopulation, Temperature
+  Real MATC " n=tx[4];p=tx[5];h=0.5*(tx[6]+abs(tx[6]));z=n*p-1.1129e20;1e-12*h*0.5*(z+abs(z))/(n+p+2.10988e10); "
+  External Photon Source = Real 0.0
+  Use Direct Carrier Photon Sources = Logical True
+  Direct Spontaneous B = Real 1.0e-10
+  Direct Stimulated Gain = Real 1.0e-12
+  Direct Gain Reference Temperature = Real 298
+  Direct Gain Characteristic Temperature = Real 120.0
+  Direct Intrinsic Density Squared = Real $ni2
+  Use Direct Coupled Carrier Recombination = Logical True
+  Direct Carrier Stimulated Gain = Real 1.0e-12
+  Use Direct Carrier Thermal Sources = Logical True
+  Direct Carrier Heat Coefficient = Real 1.0e-21
+  Direct Transition Energy Heat = Real 1.28e-19
+  Direct SRH Lifetime = Real 1.0e-8
+  Direct Auger Electron Coefficient = Real 3.0e-29
+  Direct Auger Hole Coefficient = Real 3.0e-29
+  Direct Intrinsic Density = Real $ni
+  Heat Source = Variable Coordinate, Carriers
+  Real MATC " n=tx[4];p=tx[5];1.0e-21*(n+p); "
+  Transition Energy Heat = Real 1.28e-19
+  SRH Recombination Rate = Variable Coordinate, Carriers
+  Real MATC " n=tx[4];p=tx[5];z=n*p-1.1129e20;r=z/(1e-8*(n+p+2.10988e10));0.5*(r+abs(r)); "
+  Auger Recombination Rate = Variable Coordinate, Carriers
+  Real MATC " n=tx[4];p=tx[5];z=n*p-1.1129e20;3e-29*(n+p)*0.5*(z+abs(z)); "
+  Photon Absorption Heat Source = Real 1686848.64677
+  Current Density 1 = Variable Carriers
+    Real Procedure "C:/Users/aw4wz/Documents/Codex/Lasers/Lasers/ExeLibs/EMWaveSolve" "GetCurrentSourceReal1"
+End
+
+Body 1
+  Target Bodies(1) = Integer 1
+  Equation = Integer 1
+  Material = Integer 1
+  Initial Condition = Integer 1
+  Body Force = Integer 1
+End
+
+Body 2
+  Target Bodies(1) = Integer 2
+  Equation = Integer 1
+  Material = Integer 1
+  Initial Condition = Integer 1
+  Body Force = Integer 1
+End
+
+Body 3
+  Target Bodies(1) = Integer 3
+  Equation = Integer 1
+  Material = Integer 1
+  Initial Condition = Integer 1
+  Body Force = Integer 1
+End
+
+Body 4
+  Target Bodies(1) = Integer 4
+  Equation = Integer 1
+  Material = Integer 2
+  Initial Condition = Integer 1
+  Body Force = Integer 2
+End
+
+Body 5
+  Target Bodies(1) = Integer 5
+  Equation = Integer 1
+  Material = Integer 1
+  Initial Condition = Integer 1
+  Body Force = Integer 1
+End
+
+Body 6
+  Target Bodies(6) = Integer 6 7 8 9 10 11
+  Equation = Integer 1
+  Material = Integer 1
+  Initial Condition = Integer 1
+  Body Force = Integer 1
+End
+
+Initial Condition 1
+  Temperature = Real 298
+  Number of Dopings = Integer 4
+
+  Hole Doping 1 General Function = Integer 1
+  Hole Doping 1 Integer Count = Integer 5
+  Hole Doping 1 Integers(5) = Integer 0 1 2 0 0
+  Hole Doping 1 Float Count = Integer 13
+  Hole Doping 1 Floats(13) = Real 1 0 0 0 0 3.255e-4 0 12e-4 1.95e-4 1e-4 9.2e17 2e16 0
+
+  Electron Doping 2 General Function = Integer 1
+  Electron Doping 2 Integer Count = Integer 5
+  Electron Doping 2 Integers(5) = Integer 0 1 2 0 0
+  Electron Doping 2 Float Count = Integer 13
+  Electron Doping 2 Floats(13) = Real 1 0 0 0 0 0.85e-4 0 12e-4 1.7e-4 1e-4 8e19 2e16 0
+
+  Electron Doping 3 General Function = Integer 1
+  Electron Doping 3 Integer Count = Integer 5
+  Electron Doping 3 Integers(5) = Integer 0 1 2 0 0
+  Electron Doping 3 Float Count = Integer 13
+  Electron Doping 3 Floats(13) = Real 1 0 0 0 0 2.115e-4 0 12e-4 4.23e-4 1e-4 2e16 2e16 0
+
+  Hole Doping 4 General Function = Integer 1
+  Hole Doping 4 Integer Count = Integer 5
+  Hole Doping 4 Integers(5) = Integer 0 1 2 0 0
+  Hole Doping 4 Float Count = Integer 13
+  Hole Doping 4 Floats(13) = Real 1 0 0 0 0 2.115e-4 0 12e-4 4.23e-4 1e-4 2e16 2e16 0
+End
+
+Material 1
+  Name = String "passive semiconductor regions"
+  Dielectric permittivity = Real MATC "12*eps0c"
+  Mobility of electrons = Real 1471
+  Mobility of holes = Real 470.5
+  Background doping concentration = Real $ni
+  Number of Recombinations = Integer 1
+  Recombination 1 = Real 0.0
+  Recomb N-derivative 1 = Real 0.0
+  Recomb P-derivative 1 = Real 0.0
+  Photon Population Diffusivity = Real 1.0e-3
+  Photon Decay Rate = Real 1.923330e+11
+  Spontaneous Coupling Factor = Real 1.0e-4
+  Heat Conductivity = Real 0.68
+  Density = Real 1.0
+  Heat Capacity = Real 1.0
+  Relative Permittivity = Real 11.2225
+  Relative Permeability = Real 1.0
+  Electric Conductivity = Real 0.0
+  EM Conductivity = Real 0.0
+End
+
+Material 2
+  Name = String "MQW active region"
+  Dielectric permittivity = Real MATC "12*eps0c"
+  Mobility of electrons = Real 500
+  Mobility of holes = Real 150
+  Background doping concentration = Real $ni
+  Number of Recombinations = Integer 3
+
+  ! 1. Shockley-Read-Hall net recombination-generation.
+  Recombination 1 function = Variable Coordinate, Carriers
+  Real MATC " n=tx[4];p=tx[5];ni=1.05494e10;ni2=1.1129e20;tn=1.0e-8;tp=1.0e-8;num=n*p-ni2;den=tp*(n+ni)+tn*(p+ni);num/den; "
+  Recomb N-derivative 1 function = Variable Coordinate, Carriers
+  Real MATC " n=tx[4];p=tx[5];ni=1.05494e10;ni2=1.1129e20;tn=1.0e-8;tp=1.0e-8;num=n*p-ni2;den=tp*(n+ni)+tn*(p+ni);(p*den-num*tp)/(den*den); "
+  Recomb P-derivative 1 function = Variable Coordinate, Carriers
+  Real MATC " n=tx[4];p=tx[5];ni=1.05494e10;ni2=1.1129e20;tn=1.0e-8;tp=1.0e-8;num=n*p-ni2;den=tp*(n+ni)+tn*(p+ni);(n*den-num*tn)/(den*den); "
+
+  ! 2. Spontaneous radiative net recombination.
+  Recombination 2 function = Variable Coordinate, Carriers
+  Real MATC " n=tx[4];p=tx[5];ni2=1.1129e20;B=1.0e-10;B*(n*p-ni2); "
+  Recomb N-derivative 2 function = Variable Coordinate, Carriers
+  Real MATC " p=tx[5];B=1.0e-10;B*p; "
+  Recomb P-derivative 2 function = Variable Coordinate, Carriers
+  Real MATC " n=tx[4];B=1.0e-10;B*n; "
+
+  ! 3. Auger net recombination.
+  Recombination 3 function = Variable Coordinate, Carriers
+  Real MATC " n=tx[4];p=tx[5];ni2=1.1129e20;cn=3.0e-29;cp=3.0e-29;(cn*n+cp*p)*(n*p-ni2); "
+  Recomb N-derivative 3 function = Variable Coordinate, Carriers
+  Real MATC " n=tx[4];p=tx[5];ni2=1.1129e20;cn=3.0e-29;cp=3.0e-29;cn*(n*p-ni2)+(cn*n+cp*p)*p; "
+  Recomb P-derivative 3 function = Variable Coordinate, Carriers
+  Real MATC " n=tx[4];p=tx[5];ni2=1.1129e20;cn=3.0e-29;cp=3.0e-29;cp*(n*p-ni2)+(cn*n+cp*p)*n; "
+
+  ! Stimulated recombination remains a coupled body-force source for the
+  ! photon/thermal solvers until the carrier solver natively supports
+  ! photon-dependent carrier recombination and its Jacobian.
+  Photon Population Diffusivity = Real 1.0e-3
+  Photon Decay Rate = Real 1.923330e+11
+  Spontaneous Coupling Factor = Real 1.0e-4
+  Heat Conductivity = Real 0.03
+  Density = Real 1.0
+  Heat Capacity = Real 1.0
+  Relative Permittivity = Real 11.2225
+  Relative Permeability = Real 1.0
+  EM Conductivity = Real 0.0
+  Electric Conductivity = Variable Carriers, Temperature
+    Real Procedure "C:/Users/aw4wz/Documents/Codex/Lasers/Lasers/ExeLibs/EMWaveSolve" "GetConductivity"
+  Cavity Length = Real 0.03
+  Mirror 1 Reflectivity = Real 0.9
+  Mirror 2 Reflectivity = Real 0.05
+  Spontaneous Current Coefficient = Real 1.0e-4
+End
+
+Equation 1
+  Active Solvers(5) = Integer 1 2 3 4 5
+End
+
+Solver 1
+  Equation = String "Carriers"
+  Exec Solver = String "always"
+  Procedure = File "C:/Users/aw4wz/Documents/Codex/Lasers/Lasers/ExeLibs/CarriersFVMSolve_e12e17" "CarriersFVMSolver"
+  Variable = String Carriers
+  Variable DOFs = Integer 3
+  Linear System Solver = String "Direct"
+  Linear System Direct Method = String "umfpack"
+  Steady State Convergence Tolerance = Real 0.0001
+  Nonlinear System Convergence Tolerance = Real 1e-6
+  Nonlinear System Absolute Convergence Tolerance = Real 1e-4
+  Nonlinear System Max Iterations = Integer 200
+  Nonlinear System Trust Region Minimum Radius = Real 1.0e-8
+  Nonlinear System Relaxation Factor = Real 0.5
+  E12 E17 Potential Scale = Real $Vt
+  E12 E17 Carrier Density Scale = Real $n0
+  E12 E17 Flux Integral Scale = Real 1.0
+  E12 E17 Poisson Charge Scale = Real 1.0
+  E12 E17 Carrier Row Scale = Real 1.0e-26
+  E12 E17 Use Variable Scaling = Logical True
+  E12 E17 Scaled Potential Lower = Real -200.0
+  E12 E17 Scaled Potential Upper = Real 200.0
+  E12 E17 Scaled Carrier Upper = Real 1.0e5
+End
+
+Solver 2
+  Equation = String "VectorHelmholtz"
+  Exec Solver = String "always"
+  Procedure = File "VectorHelmholtz" "VectorHelmholtzSolver"
+  Variable = String "E[E re:1 E im:1]"
+  Use Piola Transform = Logical True
+  Optimize Bandwidth = Logical True
+  Linear System Symmetric = Logical False
+  Linear System Solver = String "Direct"
+  Linear System Direct Method = String "umfpack"
+  Steady State Convergence Tolerance = Real 0.0001
+  Nonlinear System Max Iterations = Integer 1
+  Frequency = Real 1.934e+14
+End
+
+Solver 3
+  Equation = String "calcfields"
+  Procedure = File "VectorHelmholtz" "VectorHelmholtzCalcFields"
+  Calculate Electric field = Logical True
+  Linear System Solver = String "Direct"
+  Linear System Direct Method = String "umfpack"
+  Steady State Convergence Tolerance = Real 0.0001
+  Nonlinear System Max Iterations = Integer 1
+End
+
+Solver 4
+  Equation = String "EMPostProcess"
+  Procedure = File "C:/Users/aw4wz/Documents/Codex/Lasers/Lasers/ExeLibs/EMWaveSolve" "EMPostProcess"
+  Variable = String EMPostVar
+  Exported Variable 1 = String PhotonPopulation
+  EM to Photon Population Scale = Real 1.0e10
+  Steady State Convergence Tolerance = Real 0.0001
+  Nonlinear System Max Iterations = Integer 1
+End
+
+Solver 5
+  Equation = String "Temperature"
+  Exec Solver = String "always"
+  Procedure = File "C:/Users/aw4wz/Documents/Codex/Lasers/Lasers/ExeLibs/ThermoSolve" "ThermoSolver"
+  Variable = String Temperature
+  Variable DOFs = Integer 1
+  Linear System Solver = String "Direct"
+  Linear System Direct Method = String "Banded"
+  Steady State Convergence Tolerance = Real 0.0001
+  Steady State Relaxation Factor = Real 0.5
+  Nonlinear System Max Iterations = Integer 1
+End
+
+Boundary Condition 1
+  Name = String "n_contact"
+  Target Boundaries(1) = Integer 1
+  ! CarrierSolver: electrical contact with carrier reservoir.
+  Dirichlet = Logical True
+  Psi = Real 0.58830
+  N = Real 8.0e19
+  P = Real 1.39118
+  ! PhotonsSolver: metal/contact stack is not an optical source.
+  Photon Transfer Coefficient = Real 1.0e-3
+  External Photon Population = Real 0.0
+  ! ThermoSolver: bottom heat sink.
+  Heat Transfer Coefficient = Real 5000.0
+  External Temperature = Real $T0
+End
+
+Boundary Condition 2
+  Name = String "p_contact"
+  Target Boundaries(1) = Integer 2
+  ! CarrierSolver: biased p contact with carrier reservoir.
+  Dirichlet = Logical True
+  Psi = Real 0.57724
+  N = Real 1.20967e2
+  P = Real 9.2e17
+  ! PhotonsSolver: top metal/contact stack is optically lossy.
+  Photon Transfer Coefficient = Real 1.0e-3
+  External Photon Population = Real 0.0
+  ! ThermoSolver: top heat spreader.
+  Heat Transfer Coefficient = Real 2000.0
+  External Temperature = Real $T0
+End
+
+Boundary Condition 3
+  Name = String "left_symmetry"
+  Target Boundaries(1) = Integer 3
+  ! CarrierSolver: lateral symmetry, zero normal flux of Psi, n, p.
+  Zero Normal Flux = Logical True
+  ! VectorHelmholtz: absorbing Robin boundary condition matching cladding impedance
+  Electric Robin Coefficient = Real 0.0
+  Electric Robin Coefficient im = Real MATC "2*pi*1.934e+14/2.99792e10*sqrt(11.2225)"
+  ! PhotonsSolver/ThermoSolver: natural no-flux boundary by omission.
+End
+
+Boundary Condition 4
+  Name = String "right_symmetry"
+  Target Boundaries(1) = Integer 4
+  ! CarrierSolver: lateral symmetry, zero normal flux of Psi, n, p.
+  Zero Normal Flux = Logical True
+  ! VectorHelmholtz: absorbing Robin boundary condition matching cladding impedance
+  Electric Robin Coefficient = Real 0.0
+  Electric Robin Coefficient im = Real MATC "2*pi*1.934e+14/2.99792e10*sqrt(11.2225)"
+  ! PhotonsSolver/ThermoSolver: natural no-flux boundary by omission.
+End
+
+Boundary Condition 5
+  Name = String "exposed_or_insulated"
+  Target Boundaries(1) = Integer 5
+  ! CarrierSolver: electrically/passively insulated surface.
+  Zero Normal Flux = Logical True
+  ! PhotonsSolver: weak optical leakage at exposed surfaces.
+  Photon Transfer Coefficient = Real 1.0e-4
+  External Photon Population = Real 0.0
+  ! ThermoSolver: weak air cooling.
+  Heat Transfer Coefficient = Real 1.0e-3
+  External Temperature = Real $T0
+End
