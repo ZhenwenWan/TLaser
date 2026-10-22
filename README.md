@@ -19,9 +19,12 @@ Simulation and PINN comparison reports are flagged as stale after a device chang
 Calibration remains an iterative solver; the section name does not promise a fixed
 latency. The full 3D geometry is a reference visualization, while the connected
 physics engines include the reduced longitudinal predictor, Lasers transverse coupled solver,
-and a longitudinal Poisson/drift-diffusion, thermal and scalar-wave solver. The latter
-uses driven passive optical-probe boundaries; it does not predict self-lasing output.
-The two-way field workflow exchanges averaged optical heating and MQW temperature.
+and the Lasers Task 1.6 active longitudinal carrier/optical-transport solver.
+Poisson, electron/hole transport, heat and vector EM fields are solved transversely;
+gain, spontaneous/stimulated emission, mirror reflections and spatial hole burning
+are solved longitudinally. The two-way field workflow exchanges actual MQW area,
+temperature and averaged laser absorption heating. The previous passive probe
+model has been retired from new runs; old results retain their original labels.
 See the CAE guide for assumptions and convergence checks. VCSEL remains a separate
 demonstration with its existing prediction and calibration modes.
 

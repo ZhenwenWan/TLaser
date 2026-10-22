@@ -12,7 +12,7 @@ from cae_jobs import start_job, read_jobs, job_path
 from cae_elmer import detect_lasers
 from cae_mesh import read_mesh
 from device_model import validate_config
-from simulator.longitudinal_multiphysics import DEFAULTS as MULTIPHYSICS
+from simulator.lasers_longitudinal import DEFAULTS as MULTIPHYSICS
 
 
 def decode_configuration(data,kind,defaults):
@@ -20,6 +20,8 @@ def decode_configuration(data,kind,defaults):
     if doc.get('schema_version')!=1 or doc.get('kind')!=kind or not isinstance(doc.get('settings'),dict):
         raise ValueError('Configuration kind or schema version does not match this section')
     values=doc['settings']
+    if 'optical_input_W' in values:
+        raise ValueError('Passive-probe configurations cannot be loaded as Lasers active-laser jobs. Create a new configuration.')
     values={**{k:v for k,v in defaults.items() if k in MULTIPHYSICS},**values}
     if set(values)!=set(defaults):
         raise ValueError('Configuration fields do not match this section')
@@ -45,13 +47,8 @@ def decode_configuration(data,kind,defaults):
 
 
 NUMBERS={
- 'axial_bias':(-1.,1.,'Axial potential difference (V)','轴向电势差 (V)'),
- 'optical_input_W':(0.,1.,'Incident optical probe power (W)','入射光探针功率 (W)'),
- 'thermal_conductivity':(.001,10.,'Axial thermal conductivity (W/cm/K)','轴向热导率 (W/cm/K)'),
- 'thermal_sink':(1e3,1e9,'Effective transverse heat conductance (W/cm³/K)','有效横向散热系数 (W/cm³/K)'),
- 'refractive_index':(1.5,5.,'Background refractive index','背景折射率'),
- 'multiphysics_iterations':(2,100,'Maximum 1D multiphysics iterations','最大一维多物理迭代数'),
- 'multiphysics_tolerance':(1e-7,.01,'1D multiphysics residual tolerance','一维多物理残差容差'),
+ 'longitudinal_tolerance':(1e-7,.01,'Carrier / mirror / optical transport tolerance','载流子／端面／光输运容差'),
+ 'longitudinal_max_nodes':(401,20001,'Maximum adaptive longitudinal mesh nodes','最大自适应纵向网格节点数'),
  'scale':(.5,3.,'Element-size scale','单元尺寸比例'),
  'temperature':(250.,450.,'Temperature / heat sink (K)','温度／热沉 (K)'),
  'p_potential':(-1.,2.,'p-contact potential (V)','p 接触电势 (V)'),
@@ -68,6 +65,10 @@ NUMBERS={
 
 def configuration_panel(kind,defaults,c,t):
     state=f'workspace_config_{kind}'
+    if 'optical_input_W' in st.session_state.get(state,{}):
+        st.warning(t('The passive-probe configuration has been retired. Lasers active-laser defaults are loaded.',
+                     '无源探针配置已停用，现已加载 Lasers 有源激光器默认配置。'))
+        st.session_state.pop(state,None)
     st.session_state.setdefault(state,deepcopy(defaults))
     for key,value in defaults.items():
         st.session_state[state].setdefault(key,deepcopy(value))
@@ -91,6 +92,8 @@ def configuration_panel(kind,defaults,c,t):
                 # Older jobs can lack new options; only load recognized fields.
                 merged={**defaults,**{k:v for k,v in raw.items() if k in defaults}}
                 try:
+                    if 'optical_input_W' in raw:
+                        raise ValueError('This saved run used the retired passive-probe model; its settings cannot be restored as an active laser.')
                     install(decode_configuration(json.dumps(dict(schema_version=1,kind=kind,settings=merged)),kind,defaults))
                 except (ValueError,TypeError,KeyError) as ex:
                     st.error(str(ex))
@@ -139,6 +142,18 @@ def longitudinal_view(folder,t):
     axes[1].plot(z,result['N']); axes[1].set(xlabel='z (µm)',ylabel='Carriers (cm⁻³)')
     fig.tight_layout(); st.pyplot(fig); plt.close(fig)
     multiphysics='electron_density_cm3' in result
+    if 'source_methodology' in result:
+        st.caption(t('Lasers active-laser formulation: gain, spontaneous/stimulated emission, mirror reflections and spatial hole burning. Complex EM fields belong to the transverse solver.',
+                     'Lasers 有源激光器方法：增益、自发／受激辐射、端面反射和空间烧孔。复电磁场由横向求解器计算。'))
+        if result['converged']:
+            st.success(t('Carrier balance, optical transport and mirror residuals passed.','载流子平衡、光输运及端面残差达标。'))
+        else:
+            st.warning(t('Active-laser residuals have not converged.','有源激光器残差尚未收敛。'))
+        st.dataframe(result['residual_history'],hide_index=True)
+        fig,axes=plt.subplots(1,2,figsize=(10,3))
+        axes[0].plot(z,result['g']); axes[0].set(xlabel='z (µm)',ylabel='Material gain (cm⁻¹)')
+        axes[1].plot(z,result['photon_density_cm3']); axes[1].set(xlabel='z (µm)',ylabel='Photon density (cm⁻³)')
+        fig.tight_layout(); st.pyplot(fig); plt.close(fig)
     st.metric(t('Transmitted probe power (mW)' if multiphysics else 'Both-facet power (mW)',
                 '透射探针光功率 (mW)' if multiphysics else '双端面光功率 (mW)'),f"{1000*result['P_opt']:.4g}")
     if multiphysics:
@@ -202,11 +217,11 @@ def render_workspace(c,t):
         st.caption(t('Independent carrier, potential, thermal and EM field solve. Contact potential is not terminal bias.',
                      '独立求解载流子、电势、温度和电磁场；接触电势不等同端口偏压。'))
     elif choice==2:
-        st.caption(t('Coupled Poisson + electron/hole drift-diffusion, heat transport and scalar Maxwell waves. Uniform transverse injection, insulating facets and an effective transverse heat sink; optical probe boundaries, not a self-lasing solution.',
-                     '耦合泊松方程、电子／空穴漂移扩散、热输运及标量麦克斯韦波动方程。采用均匀横向注入、绝缘端面及有效横向散热；光学边界为探针激励，不是自激激光解。'))
+        st.caption(t('Lasers Task 1.6: coupled carrier balance and bidirectional optical propagation with gain, spontaneous/stimulated emission and facet reflections. Temperature is a transverse input, not an independent axial heat solve.',
+                     'Lasers 任务 1.6：载流子平衡与双向光传播耦合，包含增益、自发／受激辐射及端面反射。温度来自横向输入，不单独求解轴向热方程。'))
     else:
-        st.caption(t('Both solvers include electrical, thermal and wave equations. Cross-dimensional exchange remains MQW temperature ↔ probe absorption heat; current remains configured. This is an averaged optothermal coupling, not a full 3D laser solution.',
-                     '两个求解器均包含电学、热学及波动方程。跨维度交换为 MQW 温度 ↔ 探针吸收热，电流采用配置值。这是平均光热耦合，而非完整三维激光解。'))
+        st.caption(t('Lasers quasi-3D decomposition: transverse electrical/thermal/vector EM fields supply MQW temperature and mesh area to the active longitudinal laser. Optical absorption heat returns to 2D. Active current and confinement remain configured; feedback is averaged.',
+                     'Lasers 准三维分解：横向电学／热学／矢量电磁场向纵向有源激光器提供 MQW 温度和网格面积，光吸收热返回二维。注入电流和限制因子采用配置值，反馈采用平均量。'))
     settings=configuration_panel(kind,defaults,c,t)
     if settings is not None and st.button(t('Run configured task','运行配置任务'),key=f'run_{kind}',type='primary'):
         try:

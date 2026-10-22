@@ -44,77 +44,74 @@ restoration from a saved run, independent persistent jobs, and result visualizat
 Solver configurations snapshot the device rather than silently following later
 edits. Use **Use current Device model** to explicitly refresh that snapshot.
 
-The 2D workspace runs Elmer's coupled Poisson/electron/hole, heat and vector
-EM equations without an implicit longitudinal solve. The 1D workspace now solves
-the following three coupled equation sets, rather than the reduced carrier-rate
-model used for PINN training:
+### Alignment with the Lasers methodology
 
-* Poisson plus separate electron/hole drift-diffusion continuity, using
-  Scharfetter–Gummel fluxes, SRH/radiative/Auger recombination, uniform transverse
-  pair injection and unity-yield photogeneration from absorbed probe light.
-  Axial potential endpoints are prescribed; carrier facets have zero flux.
-* Axial heat conduction, nonradiative recombination heating and axial Joule heat,
-  with insulated thermal facets and a configurable distributed transverse heat
-  sink. Absorbed photon energy enters through photogeneration/nonradiative
-  recombination, rather than adding the same energy twice.
-* Complex scalar Helmholtz waves with partially reflecting facets and a
-  prescribed incident optical probe. Drude carrier dispersion and temperature
-  modify refractive index; wave absorption modifies the continuity equations.
-  A separate optical grid resolves each wavelength with at least 24 nodes;
-  exponentially fitted differences preserve uniform-medium phase propagation.
+Source inspection: `Lasers/Doc/CarriersSolver_README.md`,
+`ThermoSolver_README.md`, `EMSolver_README.md`, `App/Run/laser_coupled.sif`,
+`Tools/quasi_3d_synthesizer.py`, `App/Run/run_quasi_3d.py`, and
+`Pages/Projects/Lasers/index.html` Task 1.6 in the local Lasers project.
 
-This longitudinal wave model is a **passive driven cavity**, not a self-lasing
-eigenmode or stimulated-emission laser-power prediction. Its transmitted probe
-power is labeled accordingly. Optical amplitudes have units sqrt(W); they are
-power-normalized, not electric field in V/cm. The electrostatic field is V/cm.
-Default mobility, permittivity, effective masses and thermo-optic coefficient
-are explicit assumptions saved with the result, not a calibrated material library.
-The configured series/shunt resistance and confinement factor belong to the
-separate reduced laser predictor; this axial field model does not use them.
+Lasers uses a dimensional decomposition, not three identical full field solves:
 
-Configuration includes axial bias, probe power, thermal conductivity, effective
-transverse heat conductance, refractive index, iteration limit and residual
-tolerance. Each run saves separate carrier, potential, temperature, photon and
-complex wave arrays, plus residuals for all equation sets. Convergence requires
-both PDE residuals and the unrelaxed optical-source mismatch to pass. Reaching
-an iteration limit is never reported as convergence. Older configuration files
-receive the new options' defaults. Cancellation is checked between outer solves.
+* **Transverse 2D:** Poisson plus electron/hole continuity, lattice heat transport,
+  vector Helmholtz EM, and photon-population feedback in the coupled Elmer case.
+* **Longitudinal 1D:** local carrier balance with A/B/C recombination, logarithmic
+  temperature-dependent gain, spontaneous emission, stimulated recombination,
+  and bidirectional optical power propagation. Both facet reflectivities are
+  boundary conditions. This resolves spatial hole burning without a volumetric
+  3D mesh or an externally driven passive probe.
+* **Quasi-3D:** transverse parameters feed the longitudinal active laser.
+  TLaser additionally iterates averaged optical heating back into the transverse
+  solve; this outer iteration is a TLaser extension, not a claim that the Lasers
+  example driver already implements it.
 
-The fourth workspace uses this complete 1D member and the complete 2D member
-in an **optothermal feedback** closure:
+The previous passive Helmholtz probe implementation did not follow this
+methodology and has been retired. Its saved results remain viewable and clearly
+labeled; its configurations are rejected for new active-laser runs.
 
-1. Run the transverse carrier/thermal/EM solvers with the currently applied
-   optical-absorption heat source.
-2. Area-average the computed MQW temperature and use it as the effective heat-sink
-   reference for the longitudinal multiphysics solve. This averaged closure is
-   not a pointwise 3D heat-flux match; its effective thermal conductance requires
-   calibration and it must not be interpreted as a validated absolute temperature.
-3. Integrate forward plus backward cavity power along the longitudinal grid.
-   Return `fraction × alpha_i × mean_power / actual_mesh_MQW_area` in W/cm³
-   as uniform MQW optical heating, replacing the transverse photon-heating term
-   to avoid double counting it. Other transverse thermal sources remain active.
-4. Relax the returned heat source and repeat. Stop only when both the unrelaxed
-   heat mismatch and relative MQW-temperature change pass the specified tolerance,
-   and the longitudinal multiphysics solve itself has converged.
+The implemented longitudinal equations follow the Lasers source:
 
-Every feedback iterate saves its generated SIF, mesh fields, longitudinal profiles,
-and diagnostics. The UI exposes the residual history and lets you inspect each
-iterate. An exhausted iteration budget is explicitly **not converged**. Even when
-outer residuals pass, results remain candidates pending inner-solver/engineering
-review. Cancellation reaches the active Elmer subprocess.
+    G = A N + B N^2 + C(T) N^3 + g(N,T)(P+ + P-)/(Aact h nu)
+    dP+/dz = (Gamma g - alpha_i) P+ + beta B N^2 Aact h nu
+    dP-/dz = -(Gamma g - alpha_i) P- - beta B N^2 Aact h nu
+    P+(0) = R1 P-(0); P-(L) = R2 P+(L)
 
-This is cavity-averaged optical-loss/thermal two-way coupling, not spatially
-resolved 3D feedback or an electrical current-matching loop. Active current remains
-a user-configured input; no transverse current extraction is implied. The loss
-deposition fraction is an explicit modeling assumption requiring calibration.
+A log-density Newton solve enforces local carrier balance. Adaptive boundary-value
+collocation in log optical powers replaces the reference's clipped forward-Euler
+shooting, preserving its equations while checking both mirror conditions and
+transport residuals. Output includes gain, carrier/photon profiles, both facet
+powers, adaptive mesh count and convergence diagnostics. No complex longitudinal
+EM field or independent axial Poisson/thermal solve is claimed: those fields are
+provided by the transverse model.
 
-Validation: an analytical lossy Fabry–Perot transmission check, integrated
-electron/hole generation/recombination balance, default-device coupled residuals,
-zero-drive Maxwell response, cancellation, iteration-limit reporting and
-Streamlit workspace/configuration tests. These are numerical checks, not
-measured-device qualification. The reduced current sweep, PINN dataset generator,
-prediction and calibration backend remain unchanged; new field results must not
-be confused with training targets from that reduced backend.
+For two-way runs:
+
+1. Solve the transverse electrical, thermal and EM equations with the current
+   optical heating source.
+2. Extract area-weighted MQW temperature and actual body-4 area from the mesh.
+   Use both in the longitudinal active-laser equations; configured width/thickness
+   do not replace the actual area for this coupled calculation.
+3. Return `fraction * alpha_i * mean(P+ + P-) / actual_MQW_area` as MQW heating,
+   replacing the transverse optical absorption source to avoid double counting.
+4. Relax and repeat. Outer convergence requires heat mismatch, temperature change,
+   and the longitudinal carrier/transport/mirror convergence checks to pass.
+
+Active current and confinement remain explicit configured inputs. The reference
+Lasers driver hard-codes its extracted baseline current (0.127953 A at 300 um);
+TLaser does not silently substitute that baseline for a newly configured device.
+Automatic transverse current/confinement extraction and pointwise 3D feedback
+remain unimplemented. Temperature is a transverse input to the 1D model, so no
+second independently estimated heat rise is added to the MQW temperature.
+
+Electrical power/WPE use TLaser's existing series/shunt estimate, not the Lasers
+reference driver's fixed leakage-current and voltage baseline. Neither is relabeled
+as a terminal-current extraction. The PINN training/prediction backend remains
+unchanged. New adaptive field-workspace results do not silently retrain models.
+
+Validation includes carrier balance, both mirror boundaries, symmetric-cavity
+symmetry, current response, actual-area/temperature handoff, rejection of passive
+configurations and cancellation. Saved results remain candidates: numerical
+convergence does not establish measured-device accuracy or inner Elmer convergence.
 
 Earlier release notes below describe the preceding implementation.
 

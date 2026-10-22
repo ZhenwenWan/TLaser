@@ -7,7 +7,7 @@ from cae_elmer import run_fields
 from cae_fields import read_vtu
 from cae_mesh import mqw_temperature
 from device_model import validate_config
-from simulator.longitudinal_multiphysics import solve as solve_multiphysics
+from simulator.lasers_longitudinal import solve as solve_active_laser
 
 
 def solve_1d(settings, temperature=None, check=lambda: None):
@@ -19,7 +19,9 @@ def solve_1d(settings, temperature=None, check=lambda: None):
         raise ValueError('Cavity nodes must be an integer in [11, 401]')
     if not np.isfinite([frequency,temp]).all() or not 1e13<=frequency<=1e15 or not 250<=temp<=450:
         raise ValueError('Temperature/frequency outside the supported solver range')
-    report=solve_multiphysics(c,settings,temp,check)
+    if 'optical_input_W' in settings:
+        raise ValueError('This configuration belongs to the retired passive-probe solver. Create a Lasers active-laser configuration.')
+    report=solve_active_laser(c,settings,temp,check)
     report.update(heat_sink_temperature_K=temp,current_source='Configured transverse active-region pair injection',nodes=nodes,
                   frequency=frequency,configuration=c)
     return report
@@ -29,8 +31,8 @@ def run_longitudinal(folder,settings):
     check_cancel(folder)
     result=solve_1d(settings,check=lambda:check_cancel(folder))
     write_json(folder/'longitudinal.json',result)
-    return 'candidate',('1D multiphysics residuals passed; driven optical model requires validation' if result['converged']
-                        else '1D multiphysics iteration limit reached; residuals have not converged')
+    return 'candidate',('Lasers active-laser carrier, mirror and transport residuals passed' if result['converged']
+                        else 'Active-laser solve has not converged; inspect residuals')
 
 
 def heat_target(result, area_cm2, fraction):
@@ -63,7 +65,8 @@ def run_coupled(folder,settings):
         field_report=json.loads((step/'fields.json').read_text())
         points,_,fields=read_vtu(step/field_report['files'][-1])
         temp,area=mqw_temperature(step,points,fields)
-        result=solve_1d(settings,temp,check=lambda:check_cancel(folder))
+        longitudinal=deepcopy(settings); longitudinal['_active_area_cm2']=area
+        result=solve_1d(longitudinal,temp,check=lambda:check_cancel(folder))
         target=heat_target(result,area,fraction)
         if not np.isfinite(target) or target>1e10:
             raise ValueError('Optical heating outside supported range')
@@ -76,7 +79,7 @@ def run_coupled(folder,settings):
         write_json(folder/'longitudinal.json',result)
         converged=delta_t is not None and residual<=tolerance and delta_t<=tolerance and result.get('converged',False)
         write_json(folder/'coupling.json',dict(history=history,converged=converged,
-            scope='Both members solve electrical, thermal and wave fields. Inter-dimensional exchange: cavity-averaged optical absorption ↔ MQW temperature; electrical current remains configured.',
+            scope='Lasers decomposition: transverse electrical/thermal/vector EM; longitudinal active carrier/photon transport. Mesh MQW area and temperature feed 1D; cavity absorption heat returns to 2D. Active current and confinement remain configured.',
             final_folder=step.name,tolerance=tolerance))
         write_json(folder/'progress.json',dict(done=iteration,total=count,stage='optothermal feedback',heat_residual=residual))
         if converged:

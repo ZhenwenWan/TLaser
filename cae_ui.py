@@ -120,9 +120,9 @@ def render_spatial_result(folder, t):
             st.dataframe(history,hide_index=True)
     if (folder/'longitudinal.json').exists():
         result=json.loads((folder/'longitudinal.json').read_text())
-        if 'electron_density_cm3' in result:
+        if 'electron_density_cm3' in result or 'source_methodology' in result:
             from cae_workspace import longitudinal_view
-            st.markdown(t('#### Longitudinal multiphysics fields','#### 纵向多物理场'))
+            st.markdown(t('#### Longitudinal solver results','#### 纵向求解结果'))
             longitudinal_view(folder,t)
             return
         st.markdown(t('#### Longitudinal cavity / spatial hole burning','#### 纵向腔体／空间烧孔'))
