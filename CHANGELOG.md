@@ -4,6 +4,80 @@ All notable changes to the **TLaser** digital twin platform will be documented i
 
 ---
 
+## 2026-10-22 — CAE workspaces, Lasers methodology, and visualization
+
+### Implemented
+
+* Bilingual five-section workflow: Device model, Simulator core, PINN surrogate,
+  Instant Performance Prediction, and Instant Parameter Calibration.
+* Interactive Lasers reference geometry, saved device configurations, and design
+  parameters shared across prediction and calibration workflows.
+* Four Simulator core workspaces: Lasers/Gmsh mesher, transverse 2D solver,
+  longitudinal 1D solver, and iterative 1D–2D coupled solver. Each has configuration
+  import/export, saved-run selection, and result visualization.
+* Isolated background jobs with progress, cancellation, logs, saved settings,
+  result artifacts, and explicit candidate/failure states.
+* Transverse Lasers/Elmer Poisson and electron/hole transport, lattice heat,
+  vector electromagnetic fields, and photon-population coupling.
+* Active longitudinal carrier balance and bidirectional optical transport based
+  on Lasers Task 1.6: temperature-dependent gain, spontaneous/stimulated emission,
+  facet reflection, and spatial hole burning. Adaptive boundary-value integration
+  checks carrier, mirror, and transport residuals.
+* Two-way averaged optothermal feedback: measured mesh MQW area and computed MQW
+  temperature feed the longitudinal model; cavity optical absorption heating
+  returns to the transverse model. Inner longitudinal convergence is required
+  before the outer loop can report convergence.
+* Simulation-driven surrogate datasets, model training, held-out validation/test
+  evaluation, model export, and explicit activation of models passing configured
+  gates. The reduced training backend remains separate from the field solver.
+* Visible **Visualization & results** and **Configure & run** tabs. Solver
+  workspaces appear at the top of Simulator core; **Current sweep · L-I-V curves**
+  has its own panel. Empty and unfinished runs explain how to obtain plots.
+* Field contours, rotatable mesh inspection, EM phase controls, expanded
+  cross-section curves, longitudinal carrier/gain/photon/power curves, coupling
+  histories, and CSV/VTU/JSON downloads.
+
+### Methodology correction
+
+The temporary passive longitudinal probe model introduced in `1983de9` was
+replaced by the Lasers active-laser formulation in `01f3ba3`. New runs reject
+passive-probe configurations; historical results retain their original labels.
+Lasers partitions the physics between transverse full-field equations and
+longitudinal carrier/optical transport. TLaser does not claim an independent
+longitudinal Poisson/heat/vector-Maxwell solve or a full volumetric 3D solve.
+
+### Validation recorded
+
+* 27 tests passed across CAE infrastructure, workspaces, active longitudinal
+  physics, device workflows, section rendering, and reference geometry.
+* Separate Streamlit checks passed for saved active-laser result rendering and
+  the visible visualization tabs with empty-result guidance. After the navigation
+  change, all four workspace tests and three device-section tests passed again.
+* A matched 401-node comparison gave 0.002506211066 W from the Lasers reference
+  and 0.002505684998 W from TLaser: a 0.021% difference. This is a numerical
+  comparison, not experimental validation.
+* The installed Lasers runtime completed a two-iteration coupled smoke run.
+  Final heat mismatch was approximately 1.79e-4 and relative temperature change
+  1.92e-5; both longitudinal solves converged. The short transverse run still
+  requires inner-convergence review, so results remain candidates.
+
+### Access and remaining scope
+
+Restart `./run_tlaser.ps1`. Open **Simulator core**, choose a workspace, then
+**Visualization & results** and a finished saved run. If none exists, use
+**Configure & run**, start a task, then return and refresh. Saved jobs are local
+to `runs/`; Git updates do not transfer simulation results or external runtimes.
+
+Automatic transverse active-current/confinement extraction, pointwise 3D
+feedback, independently calibrated material libraries, mesh-convergence studies,
+and measured-device qualification remain outstanding. Current and confinement
+are explicit inputs. WPE uses TLaser's series/shunt electrical estimate.
+
+Implementation milestones: `b5758ca` (four workspaces), `01f3ba3` (Lasers active
+methodology), and `b8a0a9a` (visualization navigation). See the
+[CAE implementation and operating guide](Doc/cae_implementation.md) for equations,
+source references, runtime requirements, and model limitations.
+
 ## [v0.1.0-prototype] - 2026-08-10
 
 ### Added

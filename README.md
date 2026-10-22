@@ -1,5 +1,9 @@
 # TLaser - Real-Time Digital Twin & Parameter Calibration Diode Laser Platform
 
+See the [development changelog](CHANGELOG.md) for the latest implemented features,
+validation results, and remaining engineering work, and the
+[CAE operating guide](Doc/cae_implementation.md) for solver setup and visualization.
+
 The local dashboard now includes a shared, versioned ridge-device configuration,
 interactive Lasers 15-part 3D geometry, configuration save/load, and fixed-geometry calibration
 comparison. Start it with `./run_tlaser.ps1`; see
