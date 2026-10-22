@@ -15,31 +15,6 @@ from device_model import DESIGN_BOUNDS
 from cae_mesh import read_mesh
 
 
-def render_mesher(t):
-    st.markdown(t('### 1. Mesher · Lasers / Gmsh','### 1. 网格生成 · Lasers / Gmsh'))
-    st.caption(t('Generate the Lasers 11-region transverse mesh with conforming interfaces. Scale changes element sizes, not physical dimensions.',
-                 '生成 Lasers 的 11 区域横截面共形网格。比例控制单元尺寸，不改变物理尺寸。'))
-    with st.form('mesh_job'):
-        gmsh=st.text_input(t('Gmsh executable','Gmsh 可执行程序'),'C:/gmsh/gmsh.exe')
-        scale=st.slider(t('Element-size scale','单元尺寸比例'),.5,3.,1.,.1)
-        submit=st.form_submit_button(t('Generate mesh','生成网格'))
-    if submit:
-        if not Path(gmsh).is_file():
-            st.error(t('Gmsh executable not found.','未找到 Gmsh 可执行程序。'))
-        else:
-            start_job('mesh',dict(gmsh=gmsh,scale=scale)); st.rerun()
-    selected=jobs_panel('mesh',t)
-    if selected and selected[1]['state']=='completed':
-        folder=selected[0]
-        st.json(json.loads((folder/'mesh.json').read_text()),expanded=False)
-        xyz,tri,bodies=read_mesh(folder/'mesh')
-        fig,ax=plt.subplots(figsize=(10,4))
-        ax.tripcolor(xyz[:,0],xyz[:,1],tri,facecolors=bodies,cmap='tab20',edgecolors='#555',linewidth=.15)
-        ax.set(xlabel='x (µm)',ylabel='y (µm)',aspect='equal',title='Lasers material regions and mesh')
-        st.pyplot(fig); plt.close(fig)
-        st.download_button(t('Download mesh package','下载网格包'),(folder/'mesh.zip').read_bytes(),'mesh.zip')
-
-
 def jobs_panel(kind, t):
     st.button(t("Refresh job results", "刷新任务结果"), key=f"refresh_{kind}")
     jobs = read_jobs(kind)
@@ -77,45 +52,13 @@ def jobs_panel(kind, t):
 
 
 def render_field_jobs(c, t):
-    render_mesher(t)
-    st.markdown(t("### 2. Quasi-3D coupled solver", "### 2. 准三维耦合求解器"))
-    st.write(t("Run the Lasers Poisson/carrier, thermal and vector Helmholtz solvers on the reference transverse mesh.",
-               "在参考横截面网格上运行 Lasers 泊松／载流子、热传导与矢量 Helmholtz 求解器。"))
-    st.caption(t("Lasers 2D+1D architecture: transverse carrier/thermal/EM solve → area-averaged MQW temperature → longitudinal carrier and forward/backward optical transport. Current is the configured active current; this is one-way thermal coupling. Contact potential is not terminal bias.",
-                 "Lasers 二维+一维架构：横截面载流子／热／电磁求解 → MQW 面积平均温度 → 纵向载流子及双向光传播。有源电流采用设计配置；当前为单向热耦合。接触电势不等同端口偏压。"))
-    with st.form("field_job"):
-        root = st.text_input(t("Lasers runtime folder", "Lasers 运行目录"), detect_lasers(), key="cae_runtime")
-        meshes=[j[0] for j in read_jobs('mesh') if j[2]['state']=='completed']
-        mesh_job=st.selectbox(t('Solver mesh','求解网格'),['Reference mesh01']+meshes)
-        a,b,d = st.columns(3)
-        temperature = a.number_input(t("Heat-sink temperature (K)", "热沉温度 (K)"),250.,450.,float(c["operating"]["T0_K"]),1.)
-        potential = b.number_input(t("p-contact potential (V)", "p 接触电势 (V)"),-1.,2.,.57724,.001,format="%.5f")
-        frequency = d.number_input(t("Optical frequency (THz)", "光频率 (THz)"),10.,1000.,193.4,.1)
-        em_drive = st.number_input(t("Prescribed EM current source (solver units; 0 = carrier source)",
-                                    "指定电磁电流源（求解器单位；0 = 载流子源）"),0.,1.,0.,.000001,format="%.6f")
-        st.caption(t("A prescribed source computes a driven optical response, not a self-consistent lasing mode.",
-                     "指定源用于计算受激光学响应，不代表自洽激射模式。"))
-        a,b = st.columns(2)
-        iterations = a.number_input(t("Maximum coupled iterations", "最大耦合迭代数"),3,100,15)
-        tolerance = b.selectbox(t("Coupling tolerance", "耦合容差"),[1e-3,1e-4,1e-5,1e-6],index=1)
-        submitted = st.form_submit_button(t("Submit field simulation", "提交空间场仿真"),type="primary")
-    if submitted:
-        try:
-            runtime(root)
-            start_job("fields",dict(lasers_root=root,temperature=temperature,p_potential=potential,
-                      frequency=frequency*1e12,em_drive=em_drive,iterations=iterations,tolerance=tolerance,configuration=c,
-                      mesh_job=None if mesh_job=='Reference mesh01' else mesh_job))
-            st.rerun()
-        except (OSError,ValueError) as ex:
-            st.error(str(ex))
-    selected = jobs_panel("fields",t)
-    if selected is None:
-        return
-    folder, status = selected
-    if status["state"] not in {"candidate","completed"} or not (folder/"fields.json").exists():
-        return
+    from cae_workspace import render_workspace
+    render_workspace(c, t)
+
+
+def render_spatial_result(folder, t):
     report=json.loads((folder/"fields.json").read_text(encoding="utf-8"))
-    st.markdown(t('### 3. Visualization and postprocessing','### 3. 可视化与后处理'))
+    st.markdown(t('#### Field visualization','#### 空间场可视化'))
     st.warning(t("Solver output available. Review convergence and field ranges before engineering use.",
                  "已生成求解结果，请在工程使用前审阅收敛性与场量范围。"))
     if report.get("warnings"):

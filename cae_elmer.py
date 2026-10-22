@@ -30,7 +30,7 @@ def runtime(lasers_root):
     return root, home, exe, libs
 
 
-def run_fields(folder, settings):
+def run_fields(folder, settings, cancel_folder=None):
     root, home, exe, libs = runtime(settings["lasers_root"])
     bounds = {"temperature": (250, 450), "p_potential": (-1, 2), "frequency": (1e13, 1e15),
               "iterations": (3, 100), "tolerance": (1e-8, 1e-2)}
@@ -56,6 +56,15 @@ def run_fields(folder, settings):
     text = text.replace("Temperature = Real 300.0", f"Temperature = Real {settings['temperature']:.12g}")
     text = text.replace("Psi = Real 0.57724", f"Psi = Real {settings['p_potential']:.12g}")
     text = text.replace("1.934e14", f"{settings['frequency']:.12g}")
+    if 'optical_heat_W_cm3' in settings:
+        heat = float(settings['optical_heat_W_cm3'])
+        if not np.isfinite(heat) or not 0 <= heat <= 1e10:
+            raise ValueError('Optical absorption heat must be finite and within [0, 1e10] W/cm³')
+        # Replace the transverse photon-heating closure, avoiding double counting.
+        old = 'Photon Absorption Heat Source = Variable Coordinate, PhotonPopulation\n  Real MATC " pho=0.5*(tx[3]+abs(tx[3]));2.0e-20*pho; "'
+        if old not in text:
+            raise ValueError('Optical heat-source template not found')
+        text = text.replace(old, f'Photon Absorption Heat Source = Real {heat:.12g}')
     drive = float(settings.get("em_drive", 0.))
     if not np.isfinite(drive) or not 0 <= drive <= 1:
         raise ValueError("Invalid EM current-source amplitude")
@@ -86,6 +95,8 @@ def run_fields(folder, settings):
         try:
             while process.poll() is None:
                 check_cancel(folder)
+                if cancel_folder is not None:
+                    check_cancel(cancel_folder)
                 if time.monotonic()-started > 1800:
                     raise TimeoutError("Solver exceeded the 30-minute job limit")
                 time.sleep(.3)
@@ -106,8 +117,6 @@ def run_fields(folder, settings):
     points, triangles, fields = read_vtu(outputs[-1])
     if not all(np.isfinite(a).all() for a in fields.values()):
         raise RuntimeError("Solver produced nonfinite fields")
-    from cae_mesh import longitudinal_from_fields
-    longitudinal_from_fields(folder, c, points, fields)
     # A completed process is not proof of nonlinear/coupled convergence.
     warnings = list(dict.fromkeys(line.strip() for line in log.splitlines()
         if re.search(r"WARNING::|Deltamin|maximum.*iteration|\bNaN\b", line, re.I)

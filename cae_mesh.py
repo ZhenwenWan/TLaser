@@ -62,8 +62,8 @@ def run_mesh(folder, settings):
     return 'completed','Mesh generated and checked'
 
 
-def longitudinal_from_fields(folder, config, points, fields):
-    """One-way area-averaged MQW thermal coupling, following Lasers 2D+1D architecture."""
+def mqw_temperature(folder, points, fields):
+    """Area-weighted temperature and actual MQW cross-sectional area in cm²."""
     from scipy.spatial import cKDTree
     from simulator.quasi_3d_synthesizer import Quasi3DSimulator
     xyz,tri,bodies=read_mesh(folder/'case/mesh')
@@ -77,6 +77,13 @@ def longitudinal_from_fields(folder, config, points, fields):
     temperature=float(np.average(fields['temperature'][indices[active]].mean(axis=1),weights=area))
     if not np.isfinite(temperature) or temperature<=0:
         raise ValueError('Invalid active-region temperature')
+    return temperature, float(area.sum()*1e-8)
+
+
+def longitudinal_from_fields(folder, config, points, fields):
+    """Legacy one-way adapter retained for saved-job compatibility."""
+    from simulator.quasi_3d_synthesizer import Quasi3DSimulator
+    temperature, _ = mqw_temperature(folder, points, fields)
     g,o,p=config['geometry'],config['optical'],config['physical']
     sim=Quasi3DSimulator(L_cavity=g['L_um']*1e-4,w_active=g['w_um']*1e-4,d_active=g['d_um']*1e-4,
         R1=o['R1'],R2=o['R2'],T0=temperature,alpha_i=p['alpha_i'])

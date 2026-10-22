@@ -35,6 +35,42 @@ Training/test errors are against a simulator, not experimental accuracy.
 
 ## Operating guide
 
+### Four solver workspaces (2026-10-22)
+
+Simulator core now separates **Mesher · Lasers / Gmsh**, **Transverse 2D
+solver**, **Longitudinal 1D solver**, and **1D-2D two-way coupled solver**.
+Each has editable settings, versioned JSON configuration import/export,
+restoration from a saved run, independent persistent jobs, and result visualization.
+Solver configurations snapshot the device rather than silently following later
+edits. Use **Use current Device model** to explicitly refresh that snapshot.
+
+The 2D workspace runs Elmer without an implicit longitudinal solve. The 1D
+workspace runs at its specified temperature, with configurable cavity resolution
+and frequency. The fourth workspace iterates an **optothermal feedback** closure:
+
+1. Run the transverse carrier/thermal/EM solvers with the currently applied
+   optical-absorption heat source.
+2. Area-average the computed MQW temperature and solve longitudinal transport.
+3. Integrate forward plus backward cavity power along the longitudinal grid.
+   Return `fraction × alpha_i × mean_power / actual_mesh_MQW_area` in W/cm³
+   as uniform MQW optical heating, replacing the transverse photon-heating term
+   to avoid double counting it. Other transverse thermal sources remain active.
+4. Relax the returned heat source and repeat. Stop only when both the unrelaxed
+   heat mismatch and relative MQW-temperature change pass the specified tolerance.
+
+Every feedback iterate saves its generated SIF, mesh fields, longitudinal profiles,
+and diagnostics. The UI exposes the residual history and lets you inspect each
+iterate. An exhausted iteration budget is explicitly **not converged**. Even when
+outer residuals pass, results remain candidates pending inner-solver/engineering
+review. Cancellation reaches the active Elmer subprocess.
+
+This is cavity-averaged optical-loss/thermal two-way coupling, not spatially
+resolved 3D feedback or an electrical current-matching loop. Active current remains
+a user-configured input; no transverse current extraction is implied. The loss
+deposition fraction is an explicit modeling assumption requiring calibration.
+
+Earlier release notes below describe the preceding implementation.
+
 ### Lasers Simulator core update (2026-10-18)
 
 The Simulator core now provides three stages: **Mesher**, **Quasi-3D coupled

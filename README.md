@@ -10,7 +10,7 @@ simulator; the existing seven-input PINN remains a nominal predictor.
 The edge-emitter workspace has five shared-device sections in English and Chinese:
 
 1. **Device model** — edit and save the device configuration; inspect the Lasers 15-part 3D geometry.
-2. **Simulator core** — run L-I-V sweeps and isolated Lasers/Elmer coupled jobs; inspect potential, electric field, electron/hole density, temperature and complex EM fields on the actual transverse mesh, with logs and CSV/VTU export.
+2. **Simulator core** — four configurable workspaces: Lasers/Gmsh mesher, transverse 2D solver, longitudinal 1D solver, and iterative 1D–2D optothermal coupling. Each supports configuration load/save, saved-run restoration and visualization. Field results include potential, carrier density, temperature and complex EM fields, with CSV/VTU export and feedback residual history.
 3. **PINN surrogate** — generate a seven-input dataset by repeatedly calling the simulator, train a physics-informed network, inspect held-out validation/test errors, export the model and explicitly activate models that pass the configured gates.
 4. **Instant Performance Prediction** — obtain operating-point metrics and longitudinal profiles using the nominal PINN or physical simulator, including accepted fitted constants.
 5. **Instant Parameter Calibration** — upload L-I-V data or run a synthetic demo, inspect fit diagnostics, and apply accepted constants to simulator predictions.

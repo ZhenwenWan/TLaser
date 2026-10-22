@@ -17,6 +17,10 @@ def main(job_id):
         elif request["kind"] == "fields":
             from cae_elmer import run_fields
             state, stage = run_fields(folder, request["settings"])
+        elif request["kind"] in {"longitudinal", "coupled"}:
+            from cae_coupling import run_longitudinal, run_coupled
+            runner = run_longitudinal if request["kind"] == "longitudinal" else run_coupled
+            state, stage = runner(folder, request["settings"])
         else:
             from cae_training import run_training
             state, stage = run_training(folder, request["settings"])
