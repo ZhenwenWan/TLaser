@@ -44,6 +44,16 @@ restoration from a saved run, independent persistent jobs, and result visualizat
 Solver configurations snapshot the device rather than silently following later
 edits. Use **Use current Device model** to explicitly refresh that snapshot.
 
+To inspect plots, open **Simulator core**, select one of the four workspaces,
+and open its **Visualization & results** tab (shown first). Select a saved run
+and refresh after completion. The transverse workspace provides field contours,
+rotatable mesh inspection and cross-section curves; the longitudinal workspace
+provides carrier, gain, photon and forward/backward power curves. Coupled runs
+provide both, with an iteration selector. Use **Configure & run** to start a new
+simulation. Results are stored in the checkout's local `runs/` folder and are not
+downloaded by a Git update. Empty, running and failed selections show guidance
+instead of silently hiding the visualization area.
+
 ### Alignment with the Lasers methodology
 
 Source inspection: `Lasers/Doc/CarriersSolver_README.md`,

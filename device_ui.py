@@ -65,9 +65,9 @@ def render_device_workflow(surrogate, lang):
     with tabs[0]:
         render_device_model(c, lang, t)
     with tabs[1]:
-        render_simulator_core(c, t)
-        st.divider()
         render_field_jobs(c, t)
+        with st.expander(t('Current sweep · L-I-V curves','电流扫描 · L-I-V 曲线')):
+            render_simulator_core(c, t)
     with tabs[2]:
         render_pinn_surrogate(c, surrogate, t)
         st.divider()

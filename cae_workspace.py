@@ -222,38 +222,49 @@ def render_workspace(c,t):
     else:
         st.caption(t('Lasers quasi-3D decomposition: transverse electrical/thermal/vector EM fields supply MQW temperature and mesh area to the active longitudinal laser. Optical absorption heat returns to 2D. Active current and confinement remain configured; feedback is averaged.',
                      'Lasers 准三维分解：横向电学／热学／矢量电磁场向纵向有源激光器提供 MQW 温度和网格面积，光吸收热返回二维。注入电流和限制因子采用配置值，反馈采用平均量。'))
-    settings=configuration_panel(kind,defaults,c,t)
-    if settings is not None and st.button(t('Run configured task','运行配置任务'),key=f'run_{kind}',type='primary'):
-        try:
-            decode_configuration(json.dumps(dict(schema_version=1,kind=kind,settings=settings)),kind,defaults)
-            start_job(kind,settings); st.rerun()
-        except (ValueError,OSError,TypeError) as ex:
-            st.error(str(ex))
-    selected=jobs_panel(kind,t)
-    if not selected:
-        return
-    folder,status=selected
-    if status['state'] not in {'candidate','completed'}:
-        return
-    if choice==0:
-        xyz,tri,bodies=read_mesh(folder/'mesh')
-        st.json(json.loads((folder/'mesh.json').read_text()),expanded=False)
-        fig,ax=plt.subplots(figsize=(10,4)); ax.tripcolor(xyz[:,0],xyz[:,1],tri,facecolors=bodies,cmap='tab20',edgecolors='#555',linewidth=.15)
-        ax.set(xlabel='x (µm)',ylabel='y (µm)',aspect='equal'); st.pyplot(fig); plt.close(fig)
-        st.download_button(t('Download mesh package','下载网格包'),(folder/'mesh.zip').read_bytes(),'mesh.zip')
-    elif choice==1:
-        render_spatial_result(folder,t)
-    elif choice==2:
-        longitudinal_view(folder,t)
-    else:
-        report=json.loads((folder/'coupling.json').read_text())
-        if report['converged']:
-            st.success(t('Outer optothermal residuals passed. Inner solver convergence still requires review.',
-                         '外层光热残差达标，仍需审阅内部求解器收敛性。'))
+    results_tab, configuration_tab=st.tabs([t('Visualization & results','可视化与结果'),
+                                            t('Configure & run','配置与运行')])
+    with configuration_tab:
+        settings=configuration_panel(kind,defaults,c,t)
+        if settings is not None and st.button(t('Run configured task','运行配置任务'),key=f'run_{kind}',type='primary'):
+            try:
+                decode_configuration(json.dumps(dict(schema_version=1,kind=kind,settings=settings)),kind,defaults)
+                start_job(kind,settings); st.rerun()
+            except (ValueError,OSError,TypeError) as ex:
+                st.error(str(ex))
+    with results_tab:
+        st.markdown(t('#### Visualization & results','#### 可视化与结果'))
+        st.caption(t('Select a saved run below. New simulations are started in Configure & run; use Refresh job results when a run finishes.',
+                     '在下方选择已保存的运行。在“配置与运行”中启动新仿真，完成后点击“刷新任务结果”。'))
+        selected=jobs_panel(kind,t)
+        if not selected:
+            st.info(t('No simulation results are saved for this section in this local checkout. Open Configure & run, set the inputs, and select Run configured task. Then return here and refresh. Git updates include code, not saved simulation results.',
+                      '当前本地项目中尚无此模块的仿真结果。请打开“配置与运行”，设置输入并点击“运行配置任务”，然后返回此处刷新。Git 更新包含代码，不包含已保存的仿真结果。'))
+            return
+        folder,status=selected
+        if status['state'] not in {'candidate','completed'}:
+            st.info(t('Plots appear when the selected run finishes and produces results. Refresh a running job, choose a completed run, or inspect Settings and logs if the job failed.',
+                      '所选运行完成并产生结果后将显示图形。运行中请刷新，也可选择已完成的运行；若失败，请查看“设置与日志”。'))
+            return
+        if choice==0:
+            xyz,tri,bodies=read_mesh(folder/'mesh')
+            st.json(json.loads((folder/'mesh.json').read_text()),expanded=False)
+            fig,ax=plt.subplots(figsize=(10,4)); ax.tripcolor(xyz[:,0],xyz[:,1],tri,facecolors=bodies,cmap='tab20',edgecolors='#555',linewidth=.15)
+            ax.set(xlabel='x (µm)',ylabel='y (µm)',aspect='equal'); st.pyplot(fig); plt.close(fig)
+            st.download_button(t('Download mesh package','下载网格包'),(folder/'mesh.zip').read_bytes(),'mesh.zip')
+        elif choice==1:
+            render_spatial_result(folder,t)
+        elif choice==2:
+            longitudinal_view(folder,t)
         else:
-            st.warning(t('Feedback did not converge within the iteration limit.','反馈在迭代上限内未收敛。'))
-        st.dataframe(report['history'],hide_index=True)
-        st.line_chart({'Heat residual':[row['heat_residual'] for row in report['history']]})
-        st.download_button(t('Save coupling report','保存耦合报告'),(folder/'coupling.json').read_bytes(),'coupling.json')
-        iteration=st.selectbox(t('Inspect feedback iteration','查看反馈迭代'),[r['folder'] for r in report['history']],index=len(report['history'])-1)
-        render_spatial_result(folder/iteration,t)
+            report=json.loads((folder/'coupling.json').read_text())
+            if report['converged']:
+                st.success(t('Outer optothermal residuals passed. Inner solver convergence still requires review.',
+                             '外层光热残差达标，仍需审阅内部求解器收敛性。'))
+            else:
+                st.warning(t('Feedback did not converge within the iteration limit.','反馈在迭代上限内未收敛。'))
+            st.dataframe(report['history'],hide_index=True)
+            st.line_chart({'Heat residual':[row['heat_residual'] for row in report['history']]})
+            st.download_button(t('Save coupling report','保存耦合报告'),(folder/'coupling.json').read_bytes(),'coupling.json')
+            iteration=st.selectbox(t('Inspect feedback iteration','查看反馈迭代'),[r['folder'] for r in report['history']],index=len(report['history'])-1)
+            render_spatial_result(folder/iteration,t)

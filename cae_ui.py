@@ -103,7 +103,7 @@ def render_spatial_result(folder, t):
     st.download_button(t("Download field CSV", "下载场量 CSV"),csv.getvalue(),"field.csv","text/csv")
     st.download_button(t("Download solver VTU", "下载求解器 VTU"),(folder/frame).read_bytes(),Path(frame).name)
     st.download_button(t("Download generated solver case", "下载生成的求解配置"),(folder/"case/case.sif").read_bytes(),"case.sif")
-    with st.expander(t('Cross-section probe and iteration history','截面探针与迭代历史')):
+    with st.expander(t('Cross-section curves and iteration history','截面曲线与迭代历史'), expanded=True):
         cut=st.slider(t('Horizontal cut y (µm)','水平截面 y (µm)'),float(xyz[:,1].min()),float(xyz[:,1].max()),float(np.median(xyz[:,1])))
         x=np.linspace(xyz[:,0].min(),xyz[:,0].max(),250)
         probe=mtri.LinearTriInterpolator(mtri.Triangulation(xyz[:,0],xyz[:,1],triangles),values)(x,np.full_like(x,cut))
