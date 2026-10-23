@@ -4,6 +4,18 @@ All notable changes to the **TLaser** digital twin platform will be documented i
 
 ---
 
+## 2026-10-23 — Geometry-driven transverse meshing
+
+* Added physical lateral/layer scaling to Gmsh jobs and an explicit transfer from
+  Geometry controls; old configurations retain unit scales.
+* Validate material areas, physical bounds and contact tags/locations/lengths
+  before accepting meshes and before loading new meshes into the field solver.
+* Export geometry and acceptance reports with mesh packages; retain the solver's
+  selected geometry snapshot for provenance.
+* Added three reproducible Gmsh examples (reference, scaled, refined), saved mesh
+  files, reports and comparison plot visible in Mesh results.
+* Passed 21 targeted regression tests; documented the remaining staged CAE plan.
+
 ## 2026-10-23 — Six CAE workspaces
 
 * Reorganized edge-emitter navigation into Geometry, Mesh, Simulator, PINN,

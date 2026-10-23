@@ -1,0 +1,110 @@
+{
+  "passed": true,
+  "nodes": 755,
+  "triangles": 1412,
+  "bodies": 11,
+  "min_area_um2": 0.006872725102331859,
+  "regions": [
+    {
+      "body": 1,
+      "name": "bottom n-contact",
+      "expected_area_um2": 2.688,
+      "mesh_area_um2": 2.688
+    },
+    {
+      "body": 2,
+      "name": "n-InP lower cladding",
+      "expected_area_um2": 20.16,
+      "mesh_area_um2": 20.160000000000004
+    },
+    {
+      "body": 3,
+      "name": "lower SCH waveguide",
+      "expected_area_um2": 3.3599999999999994,
+      "mesh_area_um2": 3.36
+    },
+    {
+      "body": 4,
+      "name": "MQW active region",
+      "expected_area_um2": 1.0751999999999977,
+      "mesh_area_um2": 1.075200000000001
+    },
+    {
+      "body": 5,
+      "name": "upper SCH waveguide",
+      "expected_area_um2": 3.3599999999999994,
+      "mesh_area_um2": 3.3600000000000003
+    },
+    {
+      "body": 6,
+      "name": "left p-InP shoulder",
+      "expected_area_um2": 2.772000000000001,
+      "mesh_area_um2": 2.7719999999999985
+    },
+    {
+      "body": 7,
+      "name": "left SiN shoulder",
+      "expected_area_um2": 1.26,
+      "mesh_area_um2": 1.2600000000000013
+    },
+    {
+      "body": 8,
+      "name": "right p-InP shoulder",
+      "expected_area_um2": 2.772000000000001,
+      "mesh_area_um2": 2.7719999999999985
+    },
+    {
+      "body": 9,
+      "name": "right SiN shoulder",
+      "expected_area_um2": 1.26,
+      "mesh_area_um2": 1.2600000000000011
+    },
+    {
+      "body": 10,
+      "name": "p-InP ridge",
+      "expected_area_um2": 5.879999999999998,
+      "mesh_area_um2": 5.880000000000001
+    },
+    {
+      "body": 11,
+      "name": "top p-contact",
+      "expected_area_um2": 0.6720000000000005,
+      "mesh_area_um2": 0.6719999999999988
+    }
+  ],
+  "bounds_um": {
+    "width_y": 16.799999999999997,
+    "height_z": 3.384,
+    "y_min": -8.399999999999999,
+    "y_max": 8.399999999999999,
+    "z_min": 0.0,
+    "z_max": 3.384
+  },
+  "boundary_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    111,
+    112,
+    113,
+    114
+  ],
+  "scale": 1.0,
+  "geometry_scales": {
+    "lateral": 1.4,
+    "vertical": 0.8
+  },
+  "source": "Lasers Gmsh symmetric transverse mesher"
+}

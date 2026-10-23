@@ -50,6 +50,11 @@ class WorkspaceTests(unittest.TestCase):
         from streamlit.testing.v1 import AppTest
         app=AppTest.from_file(str(Path(__file__).resolve().parents[1]/'app.py'),default_timeout=120).run()
         self.assertFalse(app.exception)
+        app.number_input(key='ridge_cad_lateral').set_value(1.4).run()
+        app.number_input(key='ridge_cad_vertical').set_value(.8).run()
+        app.button(key='mesh_use_geometry').click().run()
+        self.assertEqual(app.number_input(key='option_mesh_lateral_scale').value,1.4)
+        self.assertEqual(app.number_input(key='option_mesh_vertical_scale').value,.8)
         app.radio(key='mesh_view').set_value('3D').run()
         self.assertFalse(app.exception)
         self.assertTrue(any('not volume meshing' in c.value for c in app.caption))

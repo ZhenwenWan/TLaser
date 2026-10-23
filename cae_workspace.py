@@ -23,6 +23,8 @@ def decode_configuration(data,kind,defaults):
     if 'optical_input_W' in values:
         raise ValueError('Passive-probe configurations cannot be loaded as Lasers active-laser jobs. Create a new configuration.')
     values={**{k:v for k,v in defaults.items() if k in MULTIPHYSICS},**values}
+    if kind=='mesh':
+        values={**{k:1. for k in ('lateral_scale','vertical_scale') if k in defaults},**values}
     if set(values)!=set(defaults):
         raise ValueError('Configuration fields do not match this section')
     for key,value in values.items():
@@ -49,6 +51,8 @@ def decode_configuration(data,kind,defaults):
 NUMBERS={
  'longitudinal_tolerance':(1e-7,.01,'Carrier / mirror / optical transport tolerance','载流子／端面／光输运容差'),
  'longitudinal_max_nodes':(401,20001,'Maximum adaptive longitudinal mesh nodes','最大自适应纵向网格节点数'),
+ 'lateral_scale':(.5,2.,'Lateral geometry scale','横向几何缩放'),
+ 'vertical_scale':(.5,2.,'Layer geometry scale','层叠几何缩放'),
  'scale':(.5,3.,'Element-size scale','单元尺寸比例'),
  'temperature':(250.,450.,'Temperature / heat sink (K)','温度／热沉 (K)'),
  'p_potential':(-1.,2.,'p-contact potential (V)','p 接触电势 (V)'),
@@ -100,6 +104,10 @@ def configuration_panel(kind,defaults,c,t):
     values=deepcopy(st.session_state[state])
     if 'configuration' in defaults and st.button(t('Use current Device model','采用当前器件模型'),key=f'device_{kind}'):
         values['configuration']=deepcopy(c); install(values)
+    if kind=='mesh' and st.button(t('Use Geometry scales','采用几何缩放'),key='mesh_use_geometry'):
+        values.update(lateral_scale=st.session_state.get('ridge_cad_lateral',1.),
+                      vertical_scale=st.session_state.get('ridge_cad_vertical',1.))
+        install(values)
     for key in defaults:
         widget=f'option_{kind}_{key}'
         st.session_state.setdefault(widget,json.dumps(values[key],indent=2) if isinstance(values[key],dict) else values[key])
@@ -263,12 +271,12 @@ def render_workspace(c,t,workspace='simulator'):
     transverse=dict(lasers_root=detect_lasers(),mesh_job=None,temperature=float(c['operating']['T0_K']),
         p_potential=.57724,frequency=1.934e14,em_drive=0.,iterations=15,tolerance=1e-4,configuration=deepcopy(c))
     longitudinal=dict(temperature=float(c['operating']['T0_K']),frequency=1.934e14,nodes=51,configuration=deepcopy(c),**MULTIPHYSICS)
-    defaults=[dict(gmsh='C:/gmsh/gmsh.exe',scale=1.),transverse,longitudinal,
+    defaults=[dict(gmsh='C:/gmsh/gmsh.exe',scale=1.,lateral_scale=1.,vertical_scale=1.),transverse,longitudinal,
               dict(**transverse,nodes=51,outer_iterations=8,outer_tolerance=.01,relaxation=.5,absorption_fraction=1.,**MULTIPHYSICS)][choice]
     with st.expander(t('Model details','模型说明')):
         if choice==0:
-            st.caption(t('Refine the Lasers 11-region transverse geometry; element-size scale does not change dimensions.',
-                         '细化 Lasers 11 区域横截面网格；单元尺寸比例不改变几何尺寸。'))
+            st.caption(t('Mesh the Lasers 11-region transverse geometry. Geometry scales change physical dimensions; element-size scale controls refinement. Hidden CAD parts remain in the mesh. Select the completed mesh in Simulator to use it.',
+                         '生成 Lasers 11 区域横截面网格。几何缩放改变物理尺寸，单元尺寸比例控制细化。隐藏部件仍参与网格生成；在仿真中选择已完成网格后生效。'))
         elif choice==1:
             st.caption(t('Independent carrier, potential, thermal and EM field solve. Contact potential is not terminal bias.',
                          '独立求解载流子、电势、温度和电磁场；接触电势不等同端口偏压。'))
@@ -289,6 +297,19 @@ def render_workspace(c,t,workspace='simulator'):
             except (ValueError,OSError,TypeError) as ex:
                 st.error(str(ex))
     with results_tab:
+        if choice==0:
+            evidence=Path(__file__).resolve().parent/'validation/mesh_geometry'
+            if (evidence/'validation.json').exists():
+                with st.expander(t('Validated mesh examples','已验证网格示例')):
+                    report=json.loads((evidence/'validation.json').read_text())
+                    st.caption(t('Saved geometric checks, independent of the current settings. These do not validate solver physics.',
+                                 '保存的几何检查独立于当前设置，不代表求解器物理精度验证。'))
+                    st.image(str(evidence/'mesh_comparison.png'))
+                    st.dataframe([dict(case=r['case'],nodes=r['nodes'],elements=r['triangles'],
+                        width_um=r['bounds_um']['width_y'],height_um=r['bounds_um']['height_z'],passed=r['passed'])
+                        for r in report['cases']],hide_index=True)
+                    st.download_button(t('Download mesh validation','下载网格验证'),
+                        (evidence/'validation.json').read_bytes(),'mesh_validation.json',key='mesh_validation_download')
         st.markdown(t('#### Visualization & results','#### 可视化与结果'))
         st.caption(t('Select a saved run below. New simulations are started in Configure & run; use Refresh job results when a run finishes.',
                      '在下方选择已保存的运行。在“配置与运行”中启动新仿真，完成后点击“刷新任务结果”。'))

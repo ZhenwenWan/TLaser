@@ -17,6 +17,63 @@ def read_mesh(folder):
     return nodes[:,2:5], triangles, elements[:,1]
 
 
+def scaled_model(lateral_scale=1., vertical_scale=1.):
+    """Scale the reduced transverse topology; keep effective 1D dimensions separate."""
+    for value in (lateral_scale, vertical_scale):
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not np.isfinite(value) or not .5 <= value <= 2.:
+            raise ValueError('Geometry scales must be finite numbers between 0.5 and 2')
+    model=json.loads((ROOT/'assets/elmer/geometry.json').read_text())
+    for rect in model['rectangles']:
+        for key in rect['bounds_um']:
+            rect['bounds_um'][key] *= lateral_scale if key.startswith('y_') else vertical_scale
+        rect['size_um']['width_y'] *= lateral_scale
+        rect['size_um']['height_z'] *= vertical_scale
+    for key in model['metadata']['physical_bounds_um']:
+        model['metadata']['physical_bounds_um'][key] *= lateral_scale if key in ('width_y','y_min','y_max') else vertical_scale
+    for key in model['parameters']:
+        if key.endswith('_um'):
+            model['parameters'][key] *= lateral_scale if 'width' in key else vertical_scale
+    model['metadata']['geometry_scales']=dict(lateral=lateral_scale,vertical=vertical_scale)
+    return model
+
+
+def validate_mesh(folder, model):
+    """Check region measures and contact tags against the requested geometry."""
+    xyz,tri,bodies=read_mesh(folder)
+    vertices=xyz[tri,:2]
+    a,b=vertices[:,1]-vertices[:,0],vertices[:,2]-vertices[:,0]
+    areas=np.abs(a[:,0]*b[:,1]-a[:,1]*b[:,0])/2
+    if not np.isfinite(xyz).all() or not np.allclose(xyz[:,2],0.,atol=1e-12) or np.any(areas<=0) or set(bodies)!=set(range(1,12)):
+        raise ValueError('Mesh failed finite-area/material-region checks')
+    rows=[]
+    for body,rect in enumerate(model['rectangles'],1):
+        expected=rect['size_um']['width_y']*rect['size_um']['height_z']
+        actual=float(areas[bodies==body].sum())
+        if not np.isclose(actual,expected,rtol=1e-7,atol=1e-10):
+            raise ValueError(f'Material region {body} area differs from requested geometry')
+        rows.append(dict(body=body,name=rect['name'],expected_area_um2=expected,mesh_area_um2=actual))
+    bounds=model['metadata']['physical_bounds_um']
+    if not np.allclose([xyz[:,0].min(),xyz[:,0].max(),xyz[:,1].min(),xyz[:,1].max()],
+                       [bounds[k] for k in ('y_min','y_max','z_min','z_max')],rtol=1e-9,atol=1e-9):
+        raise ValueError('Mesh bounds differ from requested geometry')
+    boundary=np.loadtxt(folder/'mesh.boundary',dtype=int,ndmin=2)
+    if not set(range(1,6)).issubset(set(boundary[:,1])):
+        raise ValueError('Mesh lacks required contact or exterior boundary tags')
+    nodes=np.loadtxt(folder/'mesh.nodes',ndmin=2)
+    lookup={int(row[0]):row[2:5] for row in nodes}
+    for tag,height,width in [(1,bounds['z_min'],bounds['width_y']),
+                             (2,bounds['z_max'],model['parameters']['ridge_width_um'])]:
+        segments=np.array([[lookup[int(n)] for n in row[-2:]] for row in boundary[boundary[:,1]==tag]])
+        if not np.allclose(segments[:,:,1],height,rtol=0,atol=1e-9):
+            raise ValueError(f'Contact {tag} is on the wrong surface')
+        length=np.linalg.norm(segments[:,1]-segments[:,0],axis=1).sum()
+        if not np.isclose(length,width,rtol=1e-8,atol=1e-9):
+            raise ValueError(f'Contact {tag} has incorrect length')
+    return dict(passed=True,nodes=len(xyz),triangles=len(tri),bodies=11,
+                min_area_um2=float(areas.min()),regions=rows,bounds_um=bounds,
+                boundary_ids=sorted(int(v) for v in set(boundary[:,1])))
+
+
 def run_mesh(folder, settings):
     scale = float(settings['scale'])
     if not np.isfinite(scale) or not .5 <= scale <= 3:
@@ -26,7 +83,8 @@ def run_mesh(folder, settings):
         raise ValueError('Gmsh executable not found')
     spec = importlib.util.spec_from_file_location('lasers_mesher', ROOT/'assets/elmer/lasers_mesher.py')
     mesher = importlib.util.module_from_spec(spec); spec.loader.exec_module(mesher)
-    model = json.loads((ROOT/'assets/elmer/geometry.json').read_text())
+    model = scaled_model(settings.get('lateral_scale',1.),settings.get('vertical_scale',1.))
+    write_json(folder/'geometry.json',model)
     geo, msh = folder/'model.geo', folder/'model.msh'
     mesher.write_geo(mesher.right_half_model(model), geo, scale)
     with (folder/'solver.log').open('w') as log:
@@ -47,18 +105,16 @@ def run_mesh(folder, settings):
     nodes,triangles=mesher.mirror_half_mesh(nodes,triangles)
     boundaries=mesher.boundaries_from_triangles(nodes,triangles,model)
     mesher.write_elmer_mesh(nodes,triangles,boundaries,folder/'mesh')
-    xyz,tri,bodies=read_mesh(folder/'mesh')
-    vertices=xyz[tri,:2]
-    a,b=vertices[:,1]-vertices[:,0],vertices[:,2]-vertices[:,0]
-    areas=np.abs(a[:,0]*b[:,1]-a[:,1]*b[:,0])/2
-    if not np.isfinite(xyz).all() or np.any(areas<=0) or set(bodies)!=set(range(1,12)):
-        raise ValueError('Mesh failed finite-area/material-region checks')
-    write_json(folder/'mesh.json',dict(nodes=len(xyz),triangles=len(tri),bodies=11,
-        min_area_um2=float(areas.min()),scale=scale,source='Lasers Gmsh symmetric transverse mesher'))
+    report=validate_mesh(folder/'mesh',model)
+    report.update(scale=scale,geometry_scales=model['metadata']['geometry_scales'],
+                  source='Lasers Gmsh symmetric transverse mesher')
+    write_json(folder/'mesh.json',report)
     with zipfile.ZipFile(folder/'mesh.zip','w',zipfile.ZIP_DEFLATED) as archive:
         for path in (folder/'mesh').iterdir():
             archive.write(path,'mesh/'+path.name)
         archive.write(geo,'model.geo')
+        archive.write(folder/'geometry.json','geometry.json')
+        archive.write(folder/'mesh.json','mesh.json')
     return 'completed','Mesh generated and checked'
 
 

@@ -13,7 +13,66 @@ The bilingual edge-emitter interface uses six concise workspaces:
 | Prediction / 预测 | Active surrogate predictions and existing physical-simulator comparison. |
 | Calibration / 标定 | Existing measurement import, parameter fitting, acceptance and application workflow. |
 
-This is a UI reorganization, preserving existing numerical engines and saved job/configuration formats. CAD lateral/layer scale and visibility are inspection settings; they do not remesh the CAD assembly or redefine the reference transverse solver. The 3D mesh view navigates planar 2D triangles, not volume elements. Calibration still fits the physical simulator; a verified ML inverse model is not yet connected. The separate VCSEL workflow is retained.
+This is a UI reorganization, preserving existing numerical engines and saved job/configuration formats. Geometry scales can now be explicitly copied into Mesh to regenerate the reduced transverse domain (see the increment below). Visibility remains an inspection setting; the full 15-part CAD assembly is not meshed. The 3D mesh view navigates planar 2D triangles, not volume elements. Calibration still fits the physical simulator; a verified ML inverse model is not yet connected. The separate VCSEL workflow is retained.
+
+## Increment 1: geometry-driven transverse meshing (2026-10-23)
+
+Geometry's lateral and layer scale controls now have an explicit downstream path:
+
+1. Set **Parts and dimensions** in Geometry.
+2. Open **Mesh → Configure & run → Use Geometry scales**. This copies the two
+   scale values into an independent mesh configuration snapshot; later Geometry
+   edits do not silently change that snapshot. Alternatively edit them in Mesh.
+3. Choose element-size scale, save the configuration if desired, and run the job.
+4. Inspect the mesh and its region-area/contact acceptance report. Downloads
+   include the generated geometry JSON, Gmsh geometry, Elmer mesh and report.
+5. In Simulator configuration, select the completed job as **Solver mesh**.
+   New geometry-bearing meshes are checked again before the field solver runs;
+   the solver job saves `mesh_geometry.json` for provenance.
+
+Both geometry scales accept finite values from 0.5 to 2. The reduced cross-section
+is transformed in physical coordinates, preserving the eleven material regions,
+left/right symmetry and contact IDs. At lateral 1.4 / layer 0.8, width is 16.8 µm,
+height 3.384 µm, ridge width 4.2 µm and MQW thickness 0.064 µm. Hidden parts are
+not removed. Effective 1D width/thickness and trained model domains stay separate.
+Legacy mesh configurations default to unit geometry scales.
+
+Validation: `python validate_mesh_geometry.py --gmsh C:/gmsh/gmsh.exe` reproduces
+three real Gmsh cases under `validation/mesh_geometry`. Reports check finite
+nonzero triangles, all eleven material areas, domain bounds, required exterior
+tags, contact locations and lengths. The refinement case must increase element
+count. The saved plot/report are available in **Mesh → Visualization & results →
+Validated mesh examples**, independently of local simulation jobs.
+
+| Case | Lateral / layer scale | Element-size scale | Nodes | Triangles |
+| --- | --- | --- | --- | --- |
+| Reference | 1 / 1 | 1 | 1663 | 3218 |
+| Scaled | 1.4 / 0.8 | 1 | 755 | 1412 |
+| Scaled, refined | 1.4 / 0.8 | 0.5 | 2691 | 5206 |
+
+All geometric checks passed. Software tests also reject invalid scales,
+corrupted coordinates and missing contacts, and check configuration migration
+and UI scale transfer. This is mesh validation, not a mesh-convergence study of
+physical outputs or a new validation of Elmer on changed geometries.
+
+## Ordered development plan
+
+Each increment must ship with reproducible evidence, documentation and a commit.
+
+1. **Complete:** physical transverse scaling, independent mesh snapshots and
+   geometry/contact acceptance checks.
+2. **Next:** explicit region-level geometry editing and geometry save/load,
+   followed by mesh/solver convergence comparisons on modified cross-sections.
+3. Volume meshing of the CAD assembly with material/interface tags and mesh
+   quality checks; enable solver consumption only after the formulation supports it.
+4. Simulator scenario management and robust field/postprocessing acceptance,
+   including resolving the outstanding coupled Poynting diagnostic and extracting
+   transverse current/confinement for longitudinal feedback.
+5. Connect selectable validated simulator scenarios to PINN datasets/training;
+   retain independent held-out validation and precise physics provenance.
+6. Verified-model prediction with domain/uncertainty checks, then ML-driven
+   inverse calibration with identifiability and synthetic-recovery tests.
+7. Measured-device benchmarks and engineering qualification across all workflows.
 
 ## Implemented work packages
 
@@ -37,14 +96,14 @@ This is a UI reorganization, preserving existing numerical engines and saved job
 ## Fidelity boundaries and remaining engineering validation
 
 The Lasers reference mesh is a 2D transverse mesh (1663 nodes / 3218 triangles),
-not a volumetric mesh of the 15-part CAD visualization. Effective solver width
+not a volumetric mesh of the 15-part CAD visualization. Explicit lateral/layer scaling now generates new transverse meshes with preserved material/contact tags. Effective solver width
 and thickness do not remesh this transverse domain. Longitudinal PINN datasets
 use the reduced quasi-3D engine, with a documented fixed set of physical
 constants. Neither output provenance is relabeled as a full 3D solve.
 
 Before production qualification: measured-device benchmark suites, mesh and
 domain convergence studies, independently verified material/doping libraries,
-configurable geometry meshing, 3D vector Maxwell analysis, and coupled
+general geometry meshing beyond uniform transverse scaling, 3D vector Maxwell analysis, and coupled
 transverse-to-longitudinal parameter extraction remain distinct work packages.
 Training/test errors are against a simulator, not experimental accuracy.
 

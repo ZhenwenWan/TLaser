@@ -47,6 +47,11 @@ def run_fields(folder, settings, cancel_folder=None):
         if json.loads((mesh_folder/'status.json').read_text())["state"] != "completed":
             raise ValueError('Selected mesh job is not complete')
         mesh_source = mesh_folder/'mesh'
+        if (mesh_folder/'geometry.json').exists():
+            from cae_mesh import validate_mesh
+            geometry=json.loads((mesh_folder/'geometry.json').read_text())
+            validate_mesh(mesh_source,geometry)
+            write_json(folder/'mesh_geometry.json',geometry)
     shutil.copytree(mesh_source, case / "mesh")
     source = (ROOT / "assets/elmer/coupled.sif").read_text(encoding="utf-8")
     text = source.replace('Mesh DB "../Mesh" "mesh01"', 'Mesh DB "." "mesh"')

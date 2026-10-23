@@ -136,8 +136,8 @@ def render_device_model(c, lang, t):
             a,b=st.columns(2)
             lateral=a.number_input(t('CAD lateral scale','CAD 横向缩放'),.5,2.,1.,.05,key='ridge_cad_lateral')
             vertical=b.number_input(t('CAD layer scale','CAD 层叠缩放'),.5,2.,1.,.05,key='ridge_cad_vertical')
-            st.caption(t('CAD scaling preserves the assembly topology. Transverse solvers and meshing currently retain their reference cross-section.',
-                         'CAD 缩放保持装配拓扑。横向求解器及网格生成目前仍采用参考横截面。'))
+            st.caption(t('CAD scaling preserves topology. In Mesh, choose Use Geometry scales to generate a matching scaled reduced cross-section; select that mesh in Simulator.',
+                         'CAD 缩放保持拓扑。在网格中点击“采用几何缩放”生成相应缩放的简化横截面，并在仿真中选用该网格。'))
         with st.expander(t('View','视图')):
             true_scale = st.toggle(t("True proportions", "真实比例"), value=True, key="ridge_true_scale")
             show_context = st.toggle(t("Show substrate and facet coatings", "显示衬底与端面镀膜"), value=True,

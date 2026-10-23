@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "kind": "mesh",
+  "settings": {
+    "gmsh": "C:/gmsh/gmsh.exe",
+    "scale": 0.5,
+    "lateral_scale": 1.4,
+    "vertical_scale": 0.8
+  }
+}
