@@ -222,32 +222,62 @@ def validation_view(folder,t):
         st.image(str(folder/'transverse_fields.png'),caption=t('Final transverse fields from the coupled run','耦合运行的最终横向场'))
 
 
-def render_workspace(c,t):
+def mesh_view(folder,t):
+    import plotly.graph_objects as go
+    xyz,tri,bodies=read_mesh(folder)
+    a,b=st.columns(2)
+    a.metric(t('Nodes','节点'),len(xyz)); b.metric(t('Elements','单元'),len(tri))
+    view=st.radio(t('Mesh view','网格视图'),['2D','3D'],horizontal=True,key='mesh_view')
+    edges=st.toggle(t('Element edges','单元边线'),value=True,key='mesh_edges')
+    if view=='2D':
+        fig,ax=plt.subplots(figsize=(10,4))
+        ax.tripcolor(xyz[:,0],xyz[:,1],tri,facecolors=bodies,cmap='tab20',
+                     edgecolors='#555' if edges else 'none',linewidth=.15)
+        ax.set(xlabel='x (µm)',ylabel='y (µm)',aspect='equal'); st.pyplot(fig); plt.close(fig)
+    else:
+        fig=go.Figure(go.Mesh3d(x=xyz[:,0],y=xyz[:,1],z=xyz[:,2],i=tri[:,0],j=tri[:,1],k=tri[:,2],
+            intensity=bodies,intensitymode='cell',colorscale='Viridis',showscale=False))
+        if edges:
+            coords=xyz[tri[:,[0,1,2,0]]]
+            wire=np.concatenate([coords,np.full((len(tri),1,3),np.nan)],axis=1).reshape(-1,3)
+            fig.add_trace(go.Scatter3d(x=wire[:,0],y=wire[:,1],z=wire[:,2],mode='lines',
+                                     line=dict(color='#94a3b8',width=1),showlegend=False,hoverinfo='skip'))
+        fig.update_layout(height=480,margin=dict(l=0,r=0,t=0,b=0),scene=dict(aspectmode='data',
+                          xaxis_title='x (µm)',yaxis_title='y (µm)',zaxis_title='z (µm)'))
+        st.plotly_chart(fig,width='stretch',key='mesh_inspection')
+    st.caption(t('2D transverse elements; the 3D view provides navigation, not volume meshing.',
+                 '采用二维横截面单元；三维视图用于旋转查看，不代表体网格。'))
+
+
+def render_workspace(c,t,workspace='simulator'):
     from cae_ui import jobs_panel,render_spatial_result
-    names=[t('1. Mesher · Lasers / Gmsh','1. 网格生成 · Lasers / Gmsh'),
-           t('2. Transverse 2D solver','2. 横向二维求解器'),
-           t('3. Longitudinal 1D solver','3. 纵向一维求解器'),
-           t('4. 1D-2D two-way coupled solver','4. 一维–二维双向耦合求解器')]
-    choice=st.radio(t('Simulator workspace','模拟器工作区'),range(4),format_func=lambda i:names[i],key='simulator_workspace')
-    st.markdown('### '+names[choice])
+    names=[t('Mesh','网格'),t('Transverse 2D','横向二维'),t('Longitudinal 1D','纵向一维'),t('Coupled 1D–2D','一维–二维耦合')]
+    if workspace=='mesh':
+        choice=0
+        st.caption(t('Generate and inspect the transverse mesh.','生成并查看横向网格。'))
+    else:
+        if st.session_state.get('simulator_workspace') not in (1,2,3):
+            st.session_state['simulator_workspace']=1
+        choice=st.radio(t('Solver','求解器'),[1,2,3],format_func=lambda i:names[i],key='simulator_workspace',horizontal=True)
     kind=['mesh','fields','longitudinal','coupled'][choice]
     transverse=dict(lasers_root=detect_lasers(),mesh_job=None,temperature=float(c['operating']['T0_K']),
         p_potential=.57724,frequency=1.934e14,em_drive=0.,iterations=15,tolerance=1e-4,configuration=deepcopy(c))
     longitudinal=dict(temperature=float(c['operating']['T0_K']),frequency=1.934e14,nodes=51,configuration=deepcopy(c),**MULTIPHYSICS)
     defaults=[dict(gmsh='C:/gmsh/gmsh.exe',scale=1.),transverse,longitudinal,
               dict(**transverse,nodes=51,outer_iterations=8,outer_tolerance=.01,relaxation=.5,absorption_fraction=1.,**MULTIPHYSICS)][choice]
-    if choice==0:
-        st.caption(t('Refine the Lasers 11-region transverse geometry; element-size scale does not change dimensions.',
-                     '细化 Lasers 11 区域横截面网格；单元尺寸比例不改变几何尺寸。'))
-    elif choice==1:
-        st.caption(t('Independent carrier, potential, thermal and EM field solve. Contact potential is not terminal bias.',
-                     '独立求解载流子、电势、温度和电磁场；接触电势不等同端口偏压。'))
-    elif choice==2:
-        st.caption(t('Lasers Task 1.6: coupled carrier balance and bidirectional optical propagation with gain, spontaneous/stimulated emission and facet reflections. Temperature is a transverse input, not an independent axial heat solve.',
-                     'Lasers 任务 1.6：载流子平衡与双向光传播耦合，包含增益、自发／受激辐射及端面反射。温度来自横向输入，不单独求解轴向热方程。'))
-    else:
-        st.caption(t('Lasers quasi-3D decomposition: transverse electrical/thermal/vector EM fields supply MQW temperature and mesh area to the active longitudinal laser. Optical absorption heat returns to 2D. Active current and confinement remain configured; feedback is averaged.',
-                     'Lasers 准三维分解：横向电学／热学／矢量电磁场向纵向有源激光器提供 MQW 温度和网格面积，光吸收热返回二维。注入电流和限制因子采用配置值，反馈采用平均量。'))
+    with st.expander(t('Model details','模型说明')):
+        if choice==0:
+            st.caption(t('Refine the Lasers 11-region transverse geometry; element-size scale does not change dimensions.',
+                         '细化 Lasers 11 区域横截面网格；单元尺寸比例不改变几何尺寸。'))
+        elif choice==1:
+            st.caption(t('Independent carrier, potential, thermal and EM field solve. Contact potential is not terminal bias.',
+                         '独立求解载流子、电势、温度和电磁场；接触电势不等同端口偏压。'))
+        elif choice==2:
+            st.caption(t('Lasers Task 1.6: coupled carrier balance and bidirectional optical propagation with gain, spontaneous/stimulated emission and facet reflections. Temperature is a transverse input, not an independent axial heat solve.',
+                         'Lasers 任务 1.6：载流子平衡与双向光传播耦合，包含增益、自发／受激辐射及端面反射。温度来自横向输入，不单独求解轴向热方程。'))
+        else:
+            st.caption(t('Lasers quasi-3D decomposition: transverse electrical/thermal/vector EM fields supply MQW temperature and mesh area to the active longitudinal laser. Optical absorption heat returns to 2D. Active current and confinement remain configured; feedback is averaged.',
+                         'Lasers 准三维分解：横向电学／热学／矢量电磁场向纵向有源激光器提供 MQW 温度和网格面积，光吸收热返回二维。注入电流和限制因子采用配置值，反馈采用平均量。'))
     results_tab, configuration_tab=st.tabs([t('Visualization & results','可视化与结果'),
                                             t('Configure & run','配置与运行')])
     with configuration_tab:
@@ -277,6 +307,11 @@ def render_workspace(c,t):
         else:
             selected=jobs_panel(kind,t)
         if not selected:
+            if choice==0:
+                st.caption(t('Reference mesh · generate a new mesh in Configure & run.',
+                             '参考网格 · 在“配置与运行”中生成新网格。'))
+                mesh_view(Path(__file__).resolve().parent/'assets/elmer/mesh',t)
+                return
             st.info(t('No simulation results are saved for this section in this local checkout. Open Configure & run, set the inputs, and select Run configured task. Then return here and refresh. Git updates include code, not saved simulation results.',
                       '当前本地项目中尚无此模块的仿真结果。请打开“配置与运行”，设置输入并点击“运行配置任务”，然后返回此处刷新。Git 更新包含代码，不包含已保存的仿真结果。'))
             return
@@ -288,10 +323,9 @@ def render_workspace(c,t):
         if choice in (2,3):
             validation_view(folder,t)
         if choice==0:
-            xyz,tri,bodies=read_mesh(folder/'mesh')
-            st.json(json.loads((folder/'mesh.json').read_text()),expanded=False)
-            fig,ax=plt.subplots(figsize=(10,4)); ax.tripcolor(xyz[:,0],xyz[:,1],tri,facecolors=bodies,cmap='tab20',edgecolors='#555',linewidth=.15)
-            ax.set(xlabel='x (µm)',ylabel='y (µm)',aspect='equal'); st.pyplot(fig); plt.close(fig)
+            mesh_view(folder/'mesh',t)
+            with st.expander(t('Mesh details','网格详情')):
+                st.json(json.loads((folder/'mesh.json').read_text()))
             st.download_button(t('Download mesh package','下载网格包'),(folder/'mesh.zip').read_bytes(),'mesh.zip')
         elif choice==1:
             render_spatial_result(folder,t)

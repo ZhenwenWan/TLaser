@@ -79,8 +79,9 @@ class DeviceUITests(unittest.TestCase):
         from streamlit.testing.v1 import AppTest
         app = AppTest.from_file(str(Path(__file__).resolve().parents[1]/"app.py"), default_timeout=90).run()
         self.assertFalse(app.exception)
-        # AppTest flattens nested tabs as well as the five main sections.
-        self.assertEqual([tab.label for tab in app.tabs if tab.label[:2] in {'1.','2.','3.','4.','5.'}], ["1. Device model", "2. Simulator core", "3. PINN surrogate", "4. Instant Performance Prediction", "5. Instant Parameter Calibration"])
+        # AppTest flattens nested tabs as well as the six main sections.
+        main = ["Geometry", "Mesh", "Simulator", "PINN", "Prediction", "Calibration"]
+        self.assertEqual([tab.label for tab in app.tabs if tab.label in main], main)
         self.assertIn('Visualization & results',[tab.label for tab in app.tabs])
         self.assertIn('Configure & run',[tab.label for tab in app.tabs])
         app.number_input(key="ridge_L_um").set_value(520.)
@@ -90,6 +91,8 @@ class DeviceUITests(unittest.TestCase):
         self.assertFalse(app.exception)
         self.assertEqual(app.number_input(key="ridge_L_um").value, 520.)
         app.sidebar.selectbox[0].set_value("CN").run()
+        main_cn = ["几何", "网格", "仿真", "PINN", "预测", "标定"]
+        self.assertEqual([tab.label for tab in app.tabs if tab.label in main_cn], main_cn)
         self.assertFalse(app.exception)
         self.assertEqual(app.session_state["ridge_config"]["geometry"]["L_um"], 520.)
 

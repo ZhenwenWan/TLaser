@@ -2,7 +2,8 @@
 from device_model import geometry_model
 
 
-def geometry_3d(config, lang="EN", true_scale=False, show_context=True, exploded=0):
+def geometry_3d(config, lang="EN", true_scale=False, show_context=True, exploded=0,
+                visible_parts=None, lateral_scale=1., vertical_scale=1.):
     """Render the original Lasers 15-part material geometry, adapting cavity length only.
 
     Source axes: x=cavity, y=lateral, z=vertical. Effective w/d in the
@@ -11,6 +12,9 @@ def geometry_3d(config, lang="EN", true_scale=False, show_context=True, exploded
     import json
     from pathlib import Path
     import plotly.graph_objects as go
+    import math
+    if not all(math.isfinite(v) and .5<=v<=2. for v in (lateral_scale,vertical_scale)):
+        raise ValueError('CAD scale must be within [0.5, 2]')
 
     c = geometry_model(config)
     length = c["regions"][0]["dimensions_um"]["L_um"]
@@ -28,14 +32,16 @@ def geometry_3d(config, lang="EN", true_scale=False, show_context=True, exploded
     for index, part in enumerate(source["parts"]):
         if not show_context and index in (0, 12, 13, 14):
             continue
-        center, size = part["center_um"], part["size_um"]
+        center, size = dict(part["center_um"]), dict(part["size_um"])
+        center['y']*=lateral_scale; size['y']*=lateral_scale
+        center['z']*=vertical_scale; size['z']*=vertical_scale
         # Facet coatings retain their source thickness while following the cavity ends.
         cx = center["x"] * length/reference_length if index < 13 else (-1 if index == 13 else 1)*(length/2 + size["x"]/2)
         sx = length if index < 13 else size["x"]
         x0, x1 = cx-sx/2, cx+sx/2
         y0, y1 = center["y"]-size["y"]/2, center["y"]+size["y"]/2
         z0, z1 = center["z"]-size["z"]/2, center["z"]+size["z"]/2
-        offset = heights.index(center["z"])*exploded if index < 13 else 0
+        offset = heights.index(part['center_um']["z"])*exploded if index < 13 else 0
         x = [x0,x1,x1,x0,x0,x1,x1,x0]
         y = [y0,y0,y1,y1,y0,y0,y1,y1]
         z = [v+offset for v in [z0,z0,z0,z0,z1,z1,z1,z1]]
@@ -47,6 +53,7 @@ def geometry_3d(config, lang="EN", true_scale=False, show_context=True, exploded
         group = str(index)
         fig.add_trace(go.Mesh3d(
             name=name, legendgroup=group, showlegend=True, x=x, y=y, z=z,
+            visible=visible_parts is None or index in visible_parts,
             i=[0,0,4,4,0,0,1,1,2,2,3,3], j=[1,2,6,7,4,5,5,6,6,7,7,4],
             k=[2,3,5,6,5,1,6,2,7,3,4,0], color=part["color"],
             opacity=.32 if index >= 13 else .86, flatshading=True,
@@ -59,7 +66,8 @@ def geometry_3d(config, lang="EN", true_scale=False, show_context=True, exploded
             y=[v for a,b in edges for v in (y[a],y[b],None)],
             z=[v for a,b in edges for v in (z[a],z[b],None)],
             mode="lines", line=dict(color="#15243a", width=2),
-            showlegend=False, legendgroup=group, hoverinfo="skip"))
+            showlegend=False, legendgroup=group, hoverinfo="skip",
+            visible=visible_parts is None or index in visible_parts))
     # Match the reference viewer's vertical magnification without changing stored coordinates.
     scales = source["metadata"]["visual_scale"]
     ranges = [max(max(t[axis]) for t in fig.data if t.type == "mesh3d")-

@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 # Set page layout and config
 st.set_page_config(
-    page_title="TLaser - Digital Twin Control Center",
+    page_title="TLaser",
     layout="wide",
     initial_sidebar_state="auto"
 )
@@ -144,14 +144,14 @@ STRINGS = {
 }
 
 # Sidebar inputs
-st.sidebar.markdown("### Language / 语言 Selection")
+st.sidebar.markdown("### Language / 语言")
 lang = st.sidebar.selectbox("Language Selection", ["EN", "CN"], label_visibility="collapsed")
 st.sidebar.markdown("---")
 
 txt = STRINGS[lang]
 
 # Device Family Selector
-st.sidebar.header(txt["device_family_label"])
+st.sidebar.markdown('### '+('Device' if lang=='EN' else '器件'))
 device_family = st.sidebar.selectbox("Device Family", [txt["device_eel"], txt["device_vcsel"]], label_visibility="collapsed")
 st.sidebar.markdown("---")
 
@@ -161,12 +161,15 @@ if device_family == txt["device_vcsel"]:
     mode = st.sidebar.radio("Mode", [txt["mode_dash"], txt["mode_calib"]], label_visibility="collapsed")
     st.sidebar.markdown("---")
 else:
-    st.sidebar.caption("Five-section device workspace" if lang == "EN" else "五模块器件工作台")
+    st.sidebar.caption("Laser design and simulation" if lang == "EN" else "激光器设计与仿真")
 
 # Main Page Header
-st.title(txt["title"])
-st.subheader(txt["subtitle"])
-st.markdown("---")
+if device_family == txt['device_eel']:
+    st.title('TLaser')
+    st.caption('Design · Simulate · Learn' if lang=='EN' else '设计 · 仿真 · 学习')
+else:
+    st.title(txt['title'])
+    st.caption(txt['subtitle'])
 
 if device_family == txt["device_eel"]:
     from device_ui import render_device_workflow

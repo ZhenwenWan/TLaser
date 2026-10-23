@@ -1,4 +1,4 @@
-"""Five-section workspace sharing one edge-emitter device configuration."""
+"""Six CAE workspaces sharing one edge-emitter device configuration."""
 from copy import deepcopy
 import json
 import numpy as np
@@ -33,6 +33,7 @@ def style_plot(fig, axes):
 def render_device_workflow(surrogate, lang):
     from device_sections import render_simulator_core, render_pinn_surrogate
     from cae_ui import render_field_jobs, render_training_jobs
+    from cae_workspace import render_workspace
 
     def t(en, cn):
         return cn if lang == "CN" else en
@@ -47,41 +48,40 @@ def render_device_workflow(surrogate, lang):
         from cae_training import ValidatedSurrogate
         try:
             surrogate = ValidatedSurrogate(job_path(selected))
-            st.info(t("Active trained model: ", "当前训练模型：") + selected[:8])
         except (OSError, ValueError, KeyError) as ex:
             st.error(str(ex))
             surrogate = None
-        if st.button(t("Return to bundled nominal model", "恢复内置标称模型")):
-            st.session_state.pop("ridge_active_model", None)
-            st.session_state.pop("ridge_pinn_check", None)
-            st.rerun()
-    st.caption(t("One device configuration connects geometry, simulation, surrogate prediction, and calibration.",
-                 "同一器件配置贯通几何、物理仿真、代理预测与参数标定。"))
-    tabs = st.tabs([t("1. Device model", "1. 器件模型"),
-                    t("2. Simulator core", "2. 模拟器内核"),
-                    t("3. PINN surrogate", "3. PINN 代理模型"),
-                    t("4. Instant Performance Prediction", "4. 即时性能预测"),
-                    t("5. Instant Parameter Calibration", "5. 即时参数标定")])
+    tabs = st.tabs([t('Geometry','几何'),t('Mesh','网格'),t('Simulator','仿真'),
+                    'PINN',t('Prediction','预测'),t('Calibration','标定')])
     with tabs[0]:
         render_device_model(c, lang, t)
     with tabs[1]:
-        render_field_jobs(c, t)
-        with st.expander(t('Current sweep · L-I-V curves','电流扫描 · L-I-V 曲线')):
-            render_simulator_core(c, t)
+        render_workspace(c,t,workspace='mesh')
     with tabs[2]:
-        render_pinn_surrogate(c, surrogate, t)
-        st.divider()
-        render_training_jobs(c, t)
+        render_field_jobs(c, t)
+        with st.expander(t('L-I-V sweep','L-I-V 扫描')):
+            render_simulator_core(c, t)
     with tabs[3]:
-        render_prediction(c, surrogate, t)
+        training,model=st.tabs([t('Training','训练'),t('Model','模型')])
+        with training:
+            render_training_jobs(c, t)
+        with model:
+            if selected:
+                st.info(t("Active trained model: ", "当前训练模型：") + selected[:8])
+                if st.button(t("Return to bundled nominal model", "恢复内置标称模型")):
+                    st.session_state.pop("ridge_active_model", None)
+                    st.session_state.pop("ridge_pinn_check", None)
+                    st.rerun()
+            render_pinn_surrogate(c, surrogate, t)
     with tabs[4]:
+        render_prediction(c, surrogate, t)
+    with tabs[5]:
         render_calibration(c, t)
 
 
 def render_device_model(c, lang, t):
-    st.subheader(t("Device model · fixed ridge edge emitter", "器件模型 · 固定脊形边发射激光器"))
-    st.caption(t("Steady-state CW preset · reduced facet-mirror model · DFB and EML physics are future extensions.",
-                 "稳态 CW 预设 · 简化端面镜模型 · DFB 和 EML 物理模型待扩展。"))
+    st.caption(t('Inspect the assembly, show or hide parts, and edit dimensions.',
+                 '查看装配体、显示或隐藏部件并编辑尺寸。'))
     with st.expander(t("Save / load device configuration", "保存 / 加载器件配置")):
         upload = st.file_uploader(t("Configuration JSON", "配置 JSON"), type=["json"], key="ridge_upload")
         if st.button(t("Load configuration", "加载配置"), disabled=upload is None):
@@ -128,23 +128,35 @@ def render_device_model(c, lang, t):
             st.table([{"Parameter / 参数": k, "Value / 数值": v, "Unit / 单位": PHYSICAL_UNITS[k]}
                       for k, v in c["physical"].items()])
     with view:
-        true_scale = st.toggle(t("True proportions", "真实比例"), key="ridge_true_scale")
-        show_context = st.toggle(t("Show substrate and facet coatings", "显示衬底与端面镀膜"), value=True,
-                                 key="ridge_show_context")
-        exploded = st.slider(t("Layer separation (µm)", "层间展开距离 (µm)"), 0., 8., 0., .5,
-                             key="ridge_layer_separation")
-        st.plotly_chart(geometry_3d(c, lang, true_scale, show_context, exploded),
+        from pathlib import Path
+        parts=json.loads((Path(__file__).parent/'assets/lasers_geometry.json').read_text(encoding='utf-8'))['parts']
+        with st.expander(t('Parts and dimensions','部件与尺寸'),expanded=False):
+            visible=st.multiselect(t('Visible parts','可见部件'),list(range(len(parts))),
+                default=list(range(len(parts))),format_func=lambda i:parts[i]['name'],key='ridge_visible_parts')
+            a,b=st.columns(2)
+            lateral=a.number_input(t('CAD lateral scale','CAD 横向缩放'),.5,2.,1.,.05,key='ridge_cad_lateral')
+            vertical=b.number_input(t('CAD layer scale','CAD 层叠缩放'),.5,2.,1.,.05,key='ridge_cad_vertical')
+            st.caption(t('CAD scaling preserves the assembly topology. Transverse solvers and meshing currently retain their reference cross-section.',
+                         'CAD 缩放保持装配拓扑。横向求解器及网格生成目前仍采用参考横截面。'))
+        with st.expander(t('View','视图')):
+            true_scale = st.toggle(t("True proportions", "真实比例"), value=True, key="ridge_true_scale")
+            show_context = st.toggle(t("Show substrate and facet coatings", "显示衬底与端面镀膜"), value=True,
+                                     key="ridge_show_context")
+            exploded = st.slider(t("Layer separation (µm)", "层间展开距离 (µm)"), 0., 8., 0., .5,
+                                 key="ridge_layer_separation")
+        st.plotly_chart(geometry_3d(c, lang, true_scale, show_context, exploded, visible, lateral, vertical),
                         width="stretch", key="ridge_geometry_3d", theme=None,
                         config={"scrollZoom": True, "displaylogo": False,
                                 "modeBarButtonsToAdd": ["orbitRotation", "pan3d", "resetCameraDefault3d"]})
         st.caption(t("Drag to rotate · scroll / pinch to zoom · choose Pan in the toolbar to move · reset camera to restore the view.",
                      "拖动旋转 · 滚轮／双指缩放 · 工具栏选择平移 · 重置相机恢复视角。"))
-        st.caption(t("Lasers reference geometry: 15 material parts, 250 µm chip width, 3 µm ridge, 0.08 µm MQW. Cavity length follows the device configuration; other layers retain their source dimensions. Effective solver width/thickness do not redefine the epitaxial stack. Vertical display scale is 12× unless True proportions is enabled. Click legend entries to hide/show parts; double-click to isolate.",
-                     "Lasers 参考几何：15 个材料部件，芯片宽 250 µm、脊宽 3 µm、MQW 厚 0.08 µm。腔长随器件配置更新，其他层保留源模型尺寸；求解器等效宽度和厚度不重新定义外延层。未开启真实比例时，纵向显示放大 12 倍。单击图例显隐部件，双击单独查看。"))
-        st.markdown(t("[Source geometry · Lasers](https://zhenwenwan.github.io/Pages/Projects/Lasers/index.html)",
-                      "[几何来源 · Lasers](https://zhenwenwan.github.io/Pages/Projects/Lasers/index.html)"))
-        st.caption(t("Within the documented sampling envelope; model accuracy is not guaranteed by range membership.",
-                     "位于文档采样范围内；范围内不代表精度已保证。"))
+        with st.expander(t('Model details','模型说明')):
+            st.caption(t("Lasers reference geometry: 15 material parts, 250 µm chip width, 3 µm ridge, 0.08 µm MQW. Cavity length follows the device configuration; other layers start from source dimensions before CAD scaling. Effective solver width/thickness do not redefine the epitaxial stack. Vertical display scale is 12× unless True proportions is enabled. Click legend entries to hide/show parts; double-click to isolate.",
+                         "Lasers 参考几何：15 个材料部件，芯片宽 250 µm、脊宽 3 µm、MQW 厚 0.08 µm。腔长随器件配置更新，其他层以源模型尺寸为 CAD 缩放基准；求解器等效宽度和厚度不重新定义外延层。未开启真实比例时，纵向显示放大 12 倍。单击图例显隐部件，双击单独查看。"))
+            st.markdown(t("[Source geometry · Lasers](https://zhenwenwan.github.io/Pages/Projects/Lasers/index.html)",
+                          "[几何来源 · Lasers](https://zhenwenwan.github.io/Pages/Projects/Lasers/index.html)"))
+            st.caption(t("Within the documented sampling envelope; model accuracy is not guaranteed by range membership.",
+                         "位于文档采样范围内；范围内不代表精度已保证。"))
         fit = st.session_state.ridge_fit
         if fit:
             with st.expander(t("Original / estimated device comparison", "原始 / 估计器件对比"), expanded=True):
@@ -158,7 +170,8 @@ def render_device_model(c, lang, t):
 
 
 def render_prediction(c, surrogate, t):
-    st.subheader(t("Instant Performance Prediction", "即时性能预测"))
+    st.caption(t('Predict performance using the active model or compare with the simulator.',
+                 '使用当前模型预测性能，或与模拟器对比。'))
     backend = st.radio(t("Prediction source", "预测来源"),
                        ["Trained PINN / 已训练 PINN" if hasattr(surrogate, "physical") else "Nominal PINN / 标称 PINN",
                         "Physical simulator / 物理模拟器"], horizontal=True)
@@ -199,9 +212,11 @@ def render_prediction(c, surrogate, t):
 
 
 def render_calibration(c, t):
-    st.subheader(t("Instant Parameter Calibration", "即时参数标定"))
-    st.info(t("This release requires known active-region current. Ordinary terminal-current LIV uploads need a conversion/model extension before fitting.",
-              "本版本需要已知有源区电流。普通端口电流 LIV 数据需先转换或扩展模型。"))
+    st.caption(t('Estimate selected parameters from measured operating data.', '根据实测工作数据估计所选参数。'))
+    with st.expander(t('Calibration method','标定方法')):
+        st.write(t('The current inverse workflow fits the physical simulator to active-current L-I-V data. A verified ML inverse model is not connected yet.',
+                   '当前反演流程用有源区电流 L-I-V 数据拟合物理模拟器，尚未接入经过验证的 ML 逆模型。'))
+        st.write(t('Terminal-current data require a conversion model before fitting.', '端口电流数据需先通过转换模型处理再拟合。'))
     source = st.radio(t("Measurement source", "测量来源"), ["Upload JSON / 上传 JSON", "Synthetic demo / 合成演示"], horizontal=True)
     measurement = st.file_uploader(t("Measured LIV JSON", "测量 LIV JSON"), type=["json"], key="ridge_measurement") if source.startswith("Upload") else None
     template = {"current_semantics": "active_region", "current_A": [.05, .1, .2, .3, .4],

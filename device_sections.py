@@ -46,7 +46,7 @@ def compare_nominal(config, surrogate):
 
 
 def render_simulator_core(c, t):
-    st.subheader(t("Simulator core", "模拟器内核"))
+    st.subheader(t("L-I-V sweep", "L-I-V 扫描"))
     st.write(t("Solve both transverse and longitudinal carrier, voltage, temperature, photon and electromagnetic field distributions.",
                "求解横向和纵向的载流子、电压、温度、光子及电磁场分布。"))
     st.caption(t("The solver couples transverse and longitudinal distributions",
@@ -99,7 +99,7 @@ def render_simulator_core(c, t):
 
 
 def render_pinn_surrogate(c, surrogate, t):
-    st.subheader(t("PINN surrogate", "PINN 代理模型"))
+    st.subheader(t("Model", "模型"))
     st.write(t("Inspect the active surrogate and compare its prediction with the physical simulator at the saved operating point. Generate and train a new model below.",
                "查看当前代理模型，在保存的工作点与物理模拟器对比预测结果。下方可生成数据并训练新模型。"))
     if surrogate is None:

@@ -36,4 +36,15 @@ class Geometry3DTests(unittest.TestCase):
             self.assertAlmostEqual(max(mesh.z)-min(mesh.z),mesh.meta['size_um']['z'])
         self.assertEqual(fig.layout.scene.dragmode,'orbit')
 
+    def test_visibility_and_topology_preserving_scaling(self):
+        base=[t for t in geometry_3d(default_config()).data if t.type=='mesh3d']
+        scaled=[t for t in geometry_3d(default_config(), visible_parts=[4], lateral_scale=1.5, vertical_scale=.75).data if t.type=='mesh3d']
+        self.assertEqual(len(base),len(scaled))
+        for index,(a,b) in enumerate(zip(base,scaled)):
+            self.assertEqual(b.visible,index==4)
+            self.assertEqual(list(a.i),list(b.i))
+            for axis,factor in [('x',1.),('y',1.5),('z',.75)]:
+                self.assertAlmostEqual(max(b[axis])-min(b[axis]),(max(a[axis])-min(a[axis]))*factor)
+        self.assertTrue(all(t.visible is False for t in geometry_3d(default_config(),visible_parts=[]).data))
+
 if __name__=='__main__': unittest.main()

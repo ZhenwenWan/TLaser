@@ -4,6 +4,18 @@ All notable changes to the **TLaser** digital twin platform will be documented i
 
 ---
 
+## 2026-10-23 — Six CAE workspaces
+
+* Reorganized edge-emitter navigation into Geometry, Mesh, Simulator, PINN,
+  Prediction and Calibration, with matching Chinese navigation.
+* Separated meshing from solver selection; preserved job configuration, load/save,
+  results, validation examples, training, prediction and calibration workflows.
+* Added explicit geometry part visibility and topology-preserving CAD scaling;
+  defaulted to true proportions. Added reference mesh preview and planar 3D
+  inspection with optional element edges.
+* Simplified titles and moved method notes into expandable details. Documented
+  the existing limits of CAD-to-mesh mapping and ML inverse calibration.
+
 ## 2026-10-22 — Saved solver validation results
 
 * Added independent carrier, mirror, gain, integrated photon-transport, field

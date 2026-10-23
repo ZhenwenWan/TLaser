@@ -137,7 +137,7 @@ def render_spatial_result(folder, t):
 
 
 def render_training_jobs(c,t):
-    st.markdown(t("### Simulation-driven PINN training", "### 仿真驱动的 PINN 训练"))
+    st.markdown(t("### Training", "### 训练"))
     st.write(t("Sample the configured design space, call the longitudinal simulator repeatedly, train a PINN, and evaluate independent validation and test sets.",
                "对设计空间采样并重复调用纵向模拟器，训练 PINN，并评估独立验证集与测试集。"))
     st.caption(t("60% training / 20% validation / 20% test. Physical constants are fixed to this saved device. Sampling uses the reduced longitudinal engine; field jobs are separate transverse solves.",

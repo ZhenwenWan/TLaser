@@ -50,12 +50,15 @@ class WorkspaceTests(unittest.TestCase):
         from streamlit.testing.v1 import AppTest
         app=AppTest.from_file(str(Path(__file__).resolve().parents[1]/'app.py'),default_timeout=120).run()
         self.assertFalse(app.exception)
-        for section in (1,2,3,0,2):
+        app.radio(key='mesh_view').set_value('3D').run()
+        self.assertFalse(app.exception)
+        self.assertTrue(any('not volume meshing' in c.value for c in app.caption))
+        for section in (1,2,3,1,2):
             app.radio(key='simulator_workspace').set_value(section).run()
             self.assertFalse(app.exception)
             self.assertTrue(any(b.label=='Run configured task' for b in app.button))
         app.number_input(key='option_longitudinal_nodes').set_value(71).run()
-        app.radio(key='simulator_workspace').set_value(0).run()
+        app.radio(key='simulator_workspace').set_value(1).run()
         app.radio(key='simulator_workspace').set_value(2).run()
         self.assertEqual(app.number_input(key='option_longitudinal_nodes').value,71)
 

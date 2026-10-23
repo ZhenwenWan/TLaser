@@ -1,5 +1,20 @@
 # TLaser CAE implementation
 
+## Workspace navigation (2026-10-23)
+
+The bilingual edge-emitter interface uses six concise workspaces:
+
+| Workspace | Workflow |
+| --- | --- |
+| Geometry / 几何 | Shared design configuration, rotatable material assembly, part visibility, topology-preserving lateral/layer scaling and exploded inspection. True proportions are the initial view. |
+| Mesh / 网格 | Gmsh configuration, save/load, jobs, mesh export and 2D or navigable 3D inspection. The bundled reference mesh is visible before the first job. |
+| Simulator / 仿真 | Transverse 2D, longitudinal 1D and coupled 1D–2D solver selection; independent configuration, saved results, fields, curves and validation examples. L-I-V sweep remains available. |
+| PINN | Training jobs and model review/activation in separate tabs. |
+| Prediction / 预测 | Active surrogate predictions and existing physical-simulator comparison. |
+| Calibration / 标定 | Existing measurement import, parameter fitting, acceptance and application workflow. |
+
+This is a UI reorganization, preserving existing numerical engines and saved job/configuration formats. CAD lateral/layer scale and visibility are inspection settings; they do not remesh the CAD assembly or redefine the reference transverse solver. The 3D mesh view navigates planar 2D triangles, not volume elements. Calibration still fits the physical simulator; a verified ML inverse model is not yet connected. The separate VCSEL workflow is retained.
+
 ## Implemented work packages
 
 1. Persistent, isolated jobs with settings snapshots, progress, cancellation,
@@ -16,7 +31,7 @@
 5. Physics-informed training in a background job, loss history, validation and
    independent test metrics, safe model export, explicit model activation, and
    rejection of predictions outside the trained sampling envelope.
-6. Maintain the five-section workspace, existing calibration acceptance checks,
+6. Maintain the six-section workspace, existing calibration acceptance checks,
    shared configuration, bilingual UI, and reproducible reports.
 
 ## Fidelity boundaries and remaining engineering validation
