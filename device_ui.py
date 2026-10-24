@@ -99,7 +99,7 @@ def render_device_model(c, lang, t):
 
     from cad_dimensions import DIMENSIONS, NAMES_CN, defaults, validate, reference
     parts=reference()['parts']
-    controls, view = st.columns([1.15, 1.85])
+    controls, view = st.columns([1.6, 1.4])
     with controls:
         st.markdown(t('**Dimensions**','**尺寸**'))
         st.caption(t('Independent dimensions only · µm. Shared values are edited at the first part.',
@@ -111,9 +111,9 @@ def render_device_model(c, lang, t):
         with st.form('ridge_dimensions'):
             table=st.data_editor(rows,hide_index=True,num_rows='fixed',width='stretch',height=600,
                 disabled=['Part','Dimension'],key='ridge_dimension_table',
-                column_config={'Part':st.column_config.TextColumn(t('Part','部件')),
-                               'Dimension':st.column_config.TextColumn(t('Dimension','尺寸')),
-                               'Value':st.column_config.NumberColumn(t('Value (µm)','数值 (µm)'),min_value=.001,format='%.3f',required=True)})
+                column_config={'Part':st.column_config.TextColumn(t('Part','部件'),width='medium'),
+                               'Dimension':st.column_config.TextColumn(t('Dimension','尺寸'),width='small'),
+                               'Value':st.column_config.NumberColumn(t('Value (µm)','数值 (µm)'),width='small',min_value=.001,format='%.3f',required=True)})
             submitted=st.form_submit_button(t('Update device','更新器件'),type='primary')
         if submitted:
             try:
