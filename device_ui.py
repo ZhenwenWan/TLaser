@@ -89,6 +89,7 @@ def render_device_model(c, lang, t):
                 st.session_state.ridge_config = loads(upload.getvalue())
                 st.session_state.ridge_fit = None
                 st.session_state.ridge_applied = False
+                st.session_state.pop("ridge_dimension_table",None)
                 for key in DESIGN_BOUNDS:
                     st.session_state.pop(f"ridge_{key}", None)
                 st.rerun()
@@ -96,67 +97,53 @@ def render_device_model(c, lang, t):
                 st.error(str(ex))
         st.download_button(t("Save configuration", "保存配置"), dumps(c), "tlaser_device.json", "application/json")
 
-    controls, view = st.columns([1, 2])
+    from cad_dimensions import DIMENSIONS, NAMES_CN, defaults, validate, reference
+    parts=reference()['parts']
+    controls, view = st.columns([1.15, 1.85])
     with controls:
-        with st.form("ridge_design"):
-            st.markdown(t("**Design parameters**", "**设计参数**"))
-            fields = [("geometry", "L_um", t("Cavity length L (µm)", "腔长 L (µm)"), 10.),
-                      ("geometry", "w_um", t("Effective active width w (µm)", "等效有源区宽度 w (µm)"), .1),
-                      ("geometry", "d_um", t("Effective active thickness d (µm)", "等效有源层厚度 d (µm)"), .001),
-                      ("optical", "R1", t("Rear facet R1", "后端面 R1"), .01),
-                      ("optical", "R2", t("Front facet R2", "前端面 R2"), .01),
-                      ("operating", "T0_K", t("Ambient temperature (K)", "环境温度 (K)"), 1.),
-                      ("operating", "I_active_A", t("Active-region current (A)", "有源区电流 (A)"), .01)]
-            edited = deepcopy(c)
-            for section, key, label, step in fields:
-                low, high = DESIGN_BOUNDS[key]
-                edited[section][key] = st.number_input(label, low, high, float(c[section][key]), step,
-                                                       key=f"ridge_{key}", format="%.3f")
-            submitted = st.form_submit_button(t("Update device", "更新器件"), type="primary")
+        st.markdown(t('**Dimensions**','**尺寸**'))
+        st.caption(t('Independent dimensions only · µm. Shared values are edited at the first part.',
+                     '仅列独立尺寸 · µm。共享尺寸仅在首个部件编辑。'))
+        dims=c.get('cad_dimensions',defaults(c['geometry']['L_um']))
+        rows=[{'Part':NAMES_CN[i] if lang=='CN' else parts[i]['name'],
+               'Dimension':t({'x':'Length','y':'Width','z':'Height'}[axis],{'x':'长','y':'宽','z':'高'}[axis]),
+               'Value':dims[key]} for i,axis,key,_ in DIMENSIONS]
+        with st.form('ridge_dimensions'):
+            table=st.data_editor(rows,hide_index=True,num_rows='fixed',width='stretch',height=600,
+                disabled=['Part','Dimension'],key='ridge_dimension_table',
+                column_config={'Part':st.column_config.TextColumn(t('Part','部件')),
+                               'Dimension':st.column_config.TextColumn(t('Dimension','尺寸')),
+                               'Value':st.column_config.NumberColumn(t('Value (µm)','数值 (µm)'),min_value=.001,format='%.3f',required=True)})
+            submitted=st.form_submit_button(t('Update device','更新器件'),type='primary')
         if submitted:
             try:
-                edited["provenance"] = {"source": "user_design", "estimated_parameters": []}
-                st.session_state.ridge_config = validate_config(edited)
-                st.session_state.ridge_fit = None
-                st.session_state.ridge_applied = False
+                values=validate({key:row['Value'] for (_,_,key,_),row in zip(DIMENSIONS,table)})
+                edited=deepcopy(c);edited['cad_dimensions']=values;edited['geometry']['L_um']=values['length']
+                st.session_state.ridge_config=validate_config(edited)
+                st.session_state.ridge_fit=None;st.session_state.ridge_applied=False
                 st.rerun()
-            except ValueError as ex:
+            except (ValueError,TypeError) as ex:
                 st.error(str(ex))
-        st.caption(t("Active current excludes leakage. Thickness is an effective model value, not an epitaxial stack.",
-                     "有源区电流不含漏电流。厚度为等效模型参数，不代表完整外延层。"))
-        with st.expander(t("Physical model parameters", "物理模型参数")):
-            st.table([{"Parameter / 参数": k, "Value / 数值": v, "Unit / 单位": PHYSICAL_UNITS[k]}
-                      for k, v in c["physical"].items()])
     with view:
-        from pathlib import Path
-        parts=json.loads((Path(__file__).parent/'assets/lasers_geometry.json').read_text(encoding='utf-8'))['parts']
-        with st.expander(t('Parts and dimensions','部件与尺寸'),expanded=False):
-            visible=st.multiselect(t('Visible parts','可见部件'),list(range(len(parts))),
-                default=list(range(len(parts))),format_func=lambda i:parts[i]['name'],key='ridge_visible_parts')
-            a,b=st.columns(2)
-            lateral=a.number_input(t('CAD lateral scale','CAD 横向缩放'),.5,2.,1.,.05,key='ridge_cad_lateral')
-            vertical=b.number_input(t('CAD layer scale','CAD 层叠缩放'),.5,2.,1.,.05,key='ridge_cad_vertical')
-            st.caption(t('CAD scaling preserves topology. In Mesh, choose Use Geometry scales to generate a matching scaled reduced cross-section; select that mesh in Simulator.',
-                         'CAD 缩放保持拓扑。在网格中点击“采用几何缩放”生成相应缩放的简化横截面，并在仿真中选用该网格。'))
         with st.expander(t('View','视图')):
             true_scale = st.toggle(t("True proportions", "真实比例"), value=True, key="ridge_true_scale")
             show_context = st.toggle(t("Show substrate and facet coatings", "显示衬底与端面镀膜"), value=True,
                                      key="ridge_show_context")
             exploded = st.slider(t("Layer separation (µm)", "层间展开距离 (µm)"), 0., 8., 0., .5,
                                  key="ridge_layer_separation")
-        st.plotly_chart(geometry_3d(c, lang, true_scale, show_context, exploded, visible, lateral, vertical),
+        st.plotly_chart(geometry_3d(c, lang, true_scale, show_context, exploded),
                         width="stretch", key="ridge_geometry_3d", theme=None,
                         config={"scrollZoom": True, "displaylogo": False,
                                 "modeBarButtonsToAdd": ["orbitRotation", "pan3d", "resetCameraDefault3d"]})
         st.caption(t("Drag to rotate · scroll / pinch to zoom · choose Pan in the toolbar to move · reset camera to restore the view.",
                      "拖动旋转 · 滚轮／双指缩放 · 工具栏选择平移 · 重置相机恢复视角。"))
         with st.expander(t('Model details','模型说明')):
-            st.caption(t("Lasers reference geometry: 15 material parts, 250 µm chip width, 3 µm ridge, 0.08 µm MQW. Cavity length follows the device configuration; other layers start from source dimensions before CAD scaling. Effective solver width/thickness do not redefine the epitaxial stack. Vertical display scale is 12× unless True proportions is enabled. Click legend entries to hide/show parts; double-click to isolate.",
-                         "Lasers 参考几何：15 个材料部件，芯片宽 250 µm、脊宽 3 µm、MQW 厚 0.08 µm。腔长随器件配置更新，其他层以源模型尺寸为 CAD 缩放基准；求解器等效宽度和厚度不重新定义外延层。未开启真实比例时，纵向显示放大 12 倍。单击图例显隐部件，双击单独查看。"))
+            st.caption(t('Body length and chip width are shared. Shoulder width = (chip width − ridge width) / 2. Metal width = 1.6 × ridge width. Facet height follows the layer stack. Paired shoulders, isolation and coatings share their dimensions; equal SCH or metal thicknesses remain independent.',
+                         '主体腔长与芯片宽度共享。肩部宽度＝（芯片宽度－脊宽）／2；金属条宽度＝1.6×脊宽；端面高度由层叠计算。成对肩部、隔离层和镀膜分别共享尺寸；数值相同的 SCH 层或金属层厚度仍独立。'))
+            st.caption(t('Full CAD dimensions; reduced transverse mesh and effective 1D/PINN dimensions are configured separately.',
+                         '此处为完整 CAD 尺寸；简化横截面网格及一维／PINN 等效尺寸单独配置。'))
             st.markdown(t("[Source geometry · Lasers](https://zhenwenwan.github.io/Pages/Projects/Lasers/index.html)",
                           "[几何来源 · Lasers](https://zhenwenwan.github.io/Pages/Projects/Lasers/index.html)"))
-            st.caption(t("Within the documented sampling envelope; model accuracy is not guaranteed by range membership.",
-                         "位于文档采样范围内；范围内不代表精度已保证。"))
         fit = st.session_state.ridge_fit
         if fit:
             with st.expander(t("Original / estimated device comparison", "原始 / 估计器件对比"), expanded=True):
@@ -170,6 +157,22 @@ def render_device_model(c, lang, t):
 
 
 def render_prediction(c, surrogate, t):
+    with st.expander(t('Operating conditions','工作条件')):
+        with st.form('ridge_operating'):
+            edited=deepcopy(c)
+            fields=[('geometry','w_um','Effective active width (µm)','等效有源宽度 (µm)'),
+                    ('geometry','d_um','Effective active thickness (µm)','等效有源厚度 (µm)'),
+                    ('optical','R1','Rear reflectivity','后端反射率'),('optical','R2','Front reflectivity','前端反射率'),
+                    ('operating','T0_K','Ambient temperature (K)','环境温度 (K)'),
+                    ('operating','I_active_A','Active-region current (A)','有源区电流 (A)')]
+            for section,key,en,cn in fields:
+                low,high=DESIGN_BOUNDS[key]
+                edited[section][key]=st.number_input(t(en,cn),low,high,float(c[section][key]),key=f'ridge_{key}',format='%.3f')
+            apply=st.form_submit_button(t('Apply conditions','应用工作条件'))
+        if apply:
+            st.session_state.ridge_config=validate_config(edited)
+            st.session_state.ridge_fit=None;st.session_state.ridge_applied=False;st.rerun()
+
     st.caption(t('Predict performance using the active model or compare with the simulator.',
                  '使用当前模型预测性能，或与模拟器对比。'))
     backend = st.radio(t("Prediction source", "预测来源"),

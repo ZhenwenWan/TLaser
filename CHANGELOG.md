@@ -4,6 +4,18 @@ All notable changes to the **TLaser** digital twin platform will be documented i
 
 ---
 
+## 2026-10-24 — Independent part dimensions
+
+* Replace Geometry controls with a bilingual Dimensions table containing 16
+  independent part dimensions, with shared dimensions owned by the first part.
+* Rebuild layer positions, symmetric shoulders/isolation, metal widths and facet
+  sizes using the inspected Lasers generator's dependency rules.
+* Remove Parts and dimensions and Physical model parameters panels. Move
+  operating/effective prediction inputs to Prediction → Operating conditions.
+* Passed 20 targeted geometry, UI and downstream regression tests.
+* Preserve CAD edits in device JSON while accepting older configurations.
+  Mesh scales remain separate until individual CAD-to-mesh mapping is implemented.
+
 ## 2026-10-23 — Geometry-driven transverse meshing
 
 * Added physical lateral/layer scaling to Gmsh jobs and an explicit transfer from

@@ -13,7 +13,50 @@ The bilingual edge-emitter interface uses six concise workspaces:
 | Prediction / 预测 | Active surrogate predictions and existing physical-simulator comparison. |
 | Calibration / 标定 | Existing measurement import, parameter fitting, acceptance and application workflow. |
 
-This is a UI reorganization, preserving existing numerical engines and saved job/configuration formats. Geometry scales can now be explicitly copied into Mesh to regenerate the reduced transverse domain (see the increment below). Visibility remains an inspection setting; the full 15-part CAD assembly is not meshed. The 3D mesh view navigates planar 2D triangles, not volume elements. Calibration still fits the physical simulator; a verified ML inverse model is not yet connected. The separate VCSEL workflow is retained.
+This is a UI reorganization, preserving existing numerical engines and saved job/configuration formats. Geometry now uses independent part dimensions (see the 2026-10-24 update below); Mesh retains separate scale settings. Visibility remains an inspection setting; the full 15-part CAD assembly is not meshed. The 3D mesh view navigates planar 2D triangles, not volume elements. Calibration still fits the physical simulator; a verified ML inverse model is not yet connected. The separate VCSEL workflow is retained.
+
+## Geometry dimension editor (2026-10-24)
+
+Geometry now shows **Dimensions / 尺寸**: a table of 16 independent part
+measurements (part, length/width/height, value in µm). Shared dimensions are
+listed only at the first owning part. The previous Parts and dimensions and
+Physical model parameters panels are removed. Part visibility uses the 3D legend.
+
+The dependency rules were inspected in the local Lasers source
+`Lasers/App/Geometry/telecom_laser_geometry.py`:
+
+* Substrate length drives the first 13 body parts; chip width drives the six
+  full-width layers, backside metal and both facet coatings.
+* Each of the first six layer heights is independent. Equal numerical values
+  (such as upper/lower SCH thickness) do not create a constraint.
+* Ridge width and combined ridge/cladding height are independent. Shoulder
+  width is `(chip width - ridge width)/2`; the first shoulder owns their shared
+  height. Both shoulder centers follow the ridge and chip edges.
+* The first SiN part owns isolation width and height for both sides. Width is
+  equivalent to choosing the source generator's window clearance, and must fit
+  inside the derived shoulder width.
+* P-metal width is `1.6 * ridge width`. P-metal and backside metal heights remain
+  independent, even though both start at 0.25 µm.
+* The rear facet owns coating length (thickness along the cavity axis), shared
+  with the front facet. Facet width follows chip width; height follows the full
+  layer stack including both metal thicknesses. Source facet placement is retained.
+
+Update device validates positive finite dimensions and topology constraints,
+rebuilds stack coordinates, and synchronizes cavity length. The existing device
+JSON save/load persists optional `cad_dimensions`; old configurations still load
+with reference dimensions. Current, temperature, reflectivities and effective
+1D/PINN dimensions are under Prediction → Operating conditions.
+
+These individual CAD dimensions are **not yet mapped into the reduced 11-region
+mesh**. The earlier Geometry scale-transfer button is removed with its source
+controls to avoid copying invisible/stale settings; Mesh retains its own editable
+physical scale settings and saved configurations. Earlier descriptions of that
+button below describe the previous increment. Implementing a full explicit
+CAD-to-reduced-domain mapping remains the next meshing task.
+
+Tests cover reconstruction of all reference part coordinates, shared dimension
+propagation, independent equal-valued layer thicknesses, layer adjacency, JSON
+round-trip, invalid topology rejection and bilingual UI editing.
 
 ## Increment 1: geometry-driven transverse meshing (2026-10-23)
 

@@ -4,7 +4,7 @@ from device_model import geometry_model
 
 def geometry_3d(config, lang="EN", true_scale=False, show_context=True, exploded=0,
                 visible_parts=None, lateral_scale=1., vertical_scale=1.):
-    """Render the original Lasers 15-part material geometry, adapting cavity length only.
+    """Render the Lasers 15-part topology with optional independent CAD dimensions.
 
     Source axes: x=cavity, y=lateral, z=vertical. Effective w/d in the
     reduced solver do not define an epitaxial stack and do not alter these layers.
@@ -19,6 +19,9 @@ def geometry_3d(config, lang="EN", true_scale=False, show_context=True, exploded
     c = geometry_model(config)
     length = c["regions"][0]["dimensions_um"]["L_um"]
     source = json.loads((Path(__file__).parent / "assets" / "lasers_geometry.json").read_text(encoding="utf-8"))
+    if "cad_dimensions" in config:
+        from cad_dimensions import assembly
+        source=assembly(config["cad_dimensions"])
     cn = lang == "CN"
     names = ["InP 衬底", "n-InP 缓冲层", "n-InP 下包层", "下 SCH 波导", "MQW 有源层",
              "上 SCH 波导", "p-InP 脊与包层", "左刻蚀 p-InP 肩部", "右刻蚀 p-InP 肩部",

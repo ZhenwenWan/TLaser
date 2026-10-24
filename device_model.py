@@ -39,7 +39,7 @@ def validate_config(config):
     if not isinstance(config, dict):
         raise ValueError("Configuration must be a JSON object.")
     expected = default_config()
-    if set(config) != set(expected):
+    if set(config) - {"cad_dimensions"} != set(expected):
         raise ValueError("Configuration fields do not match schema version 1.")
     if type(config["schema_version"]) is not int or config["schema_version"] != VERSION:
         raise ValueError("Unsupported configuration schema version.")
@@ -61,6 +61,11 @@ def validate_config(config):
                 raise ValueError(f"{key} must be a finite number.")
             if not low <= value <= high:
                 raise ValueError(f"{key} must be between {low} and {high}.")
+    if "cad_dimensions" in config:
+        from cad_dimensions import validate
+        dims=validate(config["cad_dimensions"])
+        if dims["length"] != config["geometry"]["L_um"]:
+            raise ValueError("CAD and cavity length must match")
     provenance = config["provenance"]
     if not isinstance(provenance, dict) or not isinstance(provenance.get("source"), str):
         raise ValueError("Configuration provenance must specify its source.")

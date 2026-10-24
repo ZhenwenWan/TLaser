@@ -104,10 +104,6 @@ def configuration_panel(kind,defaults,c,t):
     values=deepcopy(st.session_state[state])
     if 'configuration' in defaults and st.button(t('Use current Device model','采用当前器件模型'),key=f'device_{kind}'):
         values['configuration']=deepcopy(c); install(values)
-    if kind=='mesh' and st.button(t('Use Geometry scales','采用几何缩放'),key='mesh_use_geometry'):
-        values.update(lateral_scale=st.session_state.get('ridge_cad_lateral',1.),
-                      vertical_scale=st.session_state.get('ridge_cad_vertical',1.))
-        install(values)
     for key in defaults:
         widget=f'option_{kind}_{key}'
         st.session_state.setdefault(widget,json.dumps(values[key],indent=2) if isinstance(values[key],dict) else values[key])

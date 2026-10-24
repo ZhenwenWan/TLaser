@@ -84,12 +84,12 @@ class DeviceUITests(unittest.TestCase):
         self.assertEqual([tab.label for tab in app.tabs if tab.label in main], main)
         self.assertIn('Visualization & results',[tab.label for tab in app.tabs])
         self.assertIn('Configure & run',[tab.label for tab in app.tabs])
-        app.number_input(key="ridge_L_um").set_value(520.)
+        app.session_state["ridge_dimension_table"]={"edited_rows":{0:{"Value":520.}},"added_rows":[],"deleted_rows":[]}
         next(b for b in app.button if b.label == "Update device").click().run()
         self.assertFalse(app.exception)
         self.assertEqual(app.session_state["ridge_config"]["geometry"]["L_um"], 520.)
         self.assertFalse(app.exception)
-        self.assertEqual(app.number_input(key="ridge_L_um").value, 520.)
+        self.assertEqual(app.session_state["ridge_config"]["cad_dimensions"]["length"],520.)
         app.sidebar.selectbox[0].set_value("CN").run()
         main_cn = ["几何", "网格", "仿真", "PINN", "预测", "标定"]
         self.assertEqual([tab.label for tab in app.tabs if tab.label in main_cn], main_cn)

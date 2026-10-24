@@ -46,7 +46,7 @@ class SectionTests(unittest.TestCase):
         app.button(key="compare_pinn").click().run()
         self.assertFalse(app.exception)
         self.assertEqual(len(app.session_state["ridge_pinn_check"]["rows"]), 3)
-        app.number_input(key="ridge_L_um").set_value(510.)
+        app.session_state["ridge_dimension_table"]={"edited_rows":{0:{"Value":510.}},"added_rows":[],"deleted_rows":[]}
         next(b for b in app.button if b.label == "Update device").click().run()
         self.assertFalse(app.exception)
         self.assertTrue(any("Run the simulation again" in i.value for i in app.info))
