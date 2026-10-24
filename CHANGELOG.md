@@ -4,6 +4,17 @@ All notable changes to the **TLaser** digital twin platform will be documented i
 
 ---
 
+## 2026-10-24 — Focused Mesh workflow
+
+* Simplified Mesh results to view, details and download; removed redundant
+  headings, examples, job selector/status controls and prominent node counts.
+* Added generation preflight, cross-section size preview, automatic background
+  progress/completion, cancellation and failure diagnostics in Configure & run.
+* Passed 11 targeted tests and a real browser-triggered Gmsh generation with
+  automatic display of its completed mesh.
+* Keep the latest successful mesh visible after failures and provide a reference
+  mesh download when no generated mesh exists. Preserve solver job controls.
+
 ## 2026-10-24 — Independent part dimensions
 
 * Replace Geometry controls with a bilingual Dimensions table containing 16

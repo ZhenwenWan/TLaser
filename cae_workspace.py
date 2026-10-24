@@ -67,7 +67,7 @@ NUMBERS={
  'absorption_fraction':(.01,1.,'Optical-loss fraction deposited in MQW','沉积至 MQW 的光损耗比例')}
 
 
-def configuration_panel(kind,defaults,c,t):
+def configuration_panel(kind,defaults,c,t,allow_restore=True):
     state=f'workspace_config_{kind}'
     if 'optical_input_W' in st.session_state.get(state,{}):
         st.warning(t('The passive-probe configuration has been retired. Lasers active-laser defaults are loaded.',
@@ -89,7 +89,7 @@ def configuration_panel(kind,defaults,c,t):
             except (ValueError,TypeError,KeyError) as ex:
                 st.error(str(ex))
         jobs=read_jobs(kind)
-        if jobs:
+        if jobs and allow_restore:
             previous=st.selectbox(t('Restore settings from run','从运行恢复设置'),[j[0] for j in jobs],key=f'restore_select_{kind}')
             if st.button(t('Restore run settings','恢复运行设置'),key=f'restore_{kind}'):
                 raw=next(j[1]['settings'] for j in jobs if j[0]==previous)
@@ -229,8 +229,6 @@ def validation_view(folder,t):
 def mesh_view(folder,t):
     import plotly.graph_objects as go
     xyz,tri,bodies=read_mesh(folder)
-    a,b=st.columns(2)
-    a.metric(t('Nodes','节点'),len(xyz)); b.metric(t('Elements','单元'),len(tri))
     view=st.radio(t('Mesh view','网格视图'),['2D','3D'],horizontal=True,key='mesh_view')
     edges=st.toggle(t('Element edges','单元边线'),value=True,key='mesh_edges')
     if view=='2D':
@@ -257,12 +255,12 @@ def render_workspace(c,t,workspace='simulator'):
     from cae_ui import jobs_panel,render_spatial_result
     names=[t('Mesh','网格'),t('Transverse 2D','横向二维'),t('Longitudinal 1D','纵向一维'),t('Coupled 1D–2D','一维–二维耦合')]
     if workspace=='mesh':
-        choice=0
-        st.caption(t('Generate and inspect the transverse mesh.','生成并查看横向网格。'))
-    else:
-        if st.session_state.get('simulator_workspace') not in (1,2,3):
-            st.session_state['simulator_workspace']=1
-        choice=st.radio(t('Solver','求解器'),[1,2,3],format_func=lambda i:names[i],key='simulator_workspace',horizontal=True)
+        from mesh_ui import render_mesh
+        render_mesh(c,t)
+        return
+    if st.session_state.get('simulator_workspace') not in (1,2,3):
+        st.session_state['simulator_workspace']=1
+    choice=st.radio(t('Solver','求解器'),[1,2,3],format_func=lambda i:names[i],key='simulator_workspace',horizontal=True)
     kind=['mesh','fields','longitudinal','coupled'][choice]
     transverse=dict(lasers_root=detect_lasers(),mesh_job=None,temperature=float(c['operating']['T0_K']),
         p_potential=.57724,frequency=1.934e14,em_drive=0.,iterations=15,tolerance=1e-4,configuration=deepcopy(c))
@@ -293,19 +291,6 @@ def render_workspace(c,t,workspace='simulator'):
             except (ValueError,OSError,TypeError) as ex:
                 st.error(str(ex))
     with results_tab:
-        if choice==0:
-            evidence=Path(__file__).resolve().parent/'validation/mesh_geometry'
-            if (evidence/'validation.json').exists():
-                with st.expander(t('Validated mesh examples','已验证网格示例')):
-                    report=json.loads((evidence/'validation.json').read_text())
-                    st.caption(t('Saved geometric checks, independent of the current settings. These do not validate solver physics.',
-                                 '保存的几何检查独立于当前设置，不代表求解器物理精度验证。'))
-                    st.image(str(evidence/'mesh_comparison.png'))
-                    st.dataframe([dict(case=r['case'],nodes=r['nodes'],elements=r['triangles'],
-                        width_um=r['bounds_um']['width_y'],height_um=r['bounds_um']['height_z'],passed=r['passed'])
-                        for r in report['cases']],hide_index=True)
-                    st.download_button(t('Download mesh validation','下载网格验证'),
-                        (evidence/'validation.json').read_bytes(),'mesh_validation.json',key='mesh_validation_download')
         st.markdown(t('#### Visualization & results','#### 可视化与结果'))
         st.caption(t('Select a saved run below. New simulations are started in Configure & run; use Refresh job results when a run finishes.',
                      '在下方选择已保存的运行。在“配置与运行”中启动新仿真，完成后点击“刷新任务结果”。'))

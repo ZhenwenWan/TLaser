@@ -15,6 +15,33 @@ The bilingual edge-emitter interface uses six concise workspaces:
 
 This is a UI reorganization, preserving existing numerical engines and saved job/configuration formats. Geometry now uses independent part dimensions (see the 2026-10-24 update below); Mesh retains separate scale settings. Visibility remains an inspection setting; the full 15-part CAD assembly is not meshed. The 3D mesh view navigates planar 2D triangles, not volume elements. Calibration still fits the physical simulator; a verified ML inverse model is not yet connected. The separate VCSEL workflow is retained.
 
+## Focused Mesh workspace (2026-10-24)
+
+Mesh results now contain only the 2D/3D mesh view, edge visibility, expandable
+Mesh details and Download mesh. The duplicate heading, model/example panels,
+manual refresh, run selector, completed-status banner and prominent counts are
+removed from Mesh. Simulator job interfaces are unchanged.
+
+Configure & run retains portable configuration load/save and exposes refinement,
+lateral/layer scale and the Gmsh path. It previews the physical cross-section
+size and validates settings and executable availability before starting a job.
+Generate mesh starts an isolated background job; controls prevent duplicate
+launches while it runs. Progress refreshes automatically every two seconds with
+a cancel action. Completion reloads the latest successful mesh automatically.
+Failure/cancellation diagnostics stay in Configure & run, and the previous usable
+mesh remains visible. A reference mesh and its ZIP download are available before
+any local generation. Mesh details identifies the generated mesh for selection
+in Simulator. Old jobs and validation evidence remain on disk.
+
+Validation: 11 targeted tests passed, including configuration preflight, missing
+Gmsh rejection, failure fallback, clean reference presentation and solver
+workspace regression checks. A browser-triggered real Gmsh run
+`230ffdc0acf946f7bd73220ab5b093b0` completed with 1663 nodes / 3218 triangles;
+its identity and accepted mesh report appeared automatically in Mesh details.
+
+This remains the reduced 2D transverse mesher; full CAD-to-domain mapping and
+volume meshing are not added by this workflow simplification.
+
 ## Geometry dimension editor (2026-10-24)
 
 Geometry now shows **Dimensions / 尺寸**: a table of 16 independent part
