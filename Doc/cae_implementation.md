@@ -1,5 +1,40 @@
 # TLaser CAE implementation
 
+## Tetrahedral volume meshing (2026-10-24)
+
+Mesh > Configure & run now defaults to 3D. Generate mesh snapshots the current
+15-part CAD dimensions. Visualization & results offers part selection, element
+edges and a cavity cutaway that exposes interior tetrahedral cells. Download mesh
+contains Gmsh 2.2 type-4 tetrahedra, Elmer type-504 four-node cells and type-303
+boundary triangles, plus the geometry snapshot, arrays and validation report.
+
+The 3D backend is a native structured-grid subdivision for the fixed rectangular
+CAD assembly, not a Gmsh unstructured generator. Every CAD plane is inserted into
+a shared grid. Each occupied cuboid is split consistently into six tetrahedra.
+Shared material faces use the same nodes and triangles, with both parent cell IDs
+exported. The existing 2D path continues to use Gmsh.
+
+The target size controls grid-axis spacing (default 20 micrometers), constrained
+by the requested minimum/maximum interval (defaults 0.02/40 micrometers).
+CAD planes can force smaller spacing to preserve thin layers; tetrahedral diagonal
+edges can exceed the axis spacing. These are not strict bounds on all cell edges.
+Thin layers produce anisotropic cells; numerical conditioning and full 3D solver
+accuracy are not yet qualified. Requests above 250,000 tetrahedra are rejected
+before generation. Existing transverse solvers accept only 2D meshes; volume
+meshes are excluded from their selector and rejected by the runtime guard.
+
+Validation artifacts: `validation/tetrahedral/reference`. The default mesh has
+5,820 nodes, 28,170 positive-volume tetrahedra, 15 material regions, 10,212 boundary
+triangles and 5,920 shared-interface triangles. Checks verify each part's volume
+and boundary area, unique nodes, manifold faces and exported parent connectivity.
+Gmsh successfully read/re-exported the generated model with `-check -0`.
+Thirteen tests pass across `tests.test_tetra`, `tests.test_mesh_ui`,
+`tests.test_mesh_interfaces` and `tests.test_mesh_geometry`, including changed
+dimensions, corruption/resource rejection, cutaway display and solver rejection.
+The browser workflow generated the volume mesh and displayed a 50% cutaway.
+This supersedes earlier notes that 3D volume meshing was pending; full 3D physics
+solving remains pending.
+
 ## Workspace navigation (2026-10-23)
 
 The bilingual edge-emitter interface uses six concise workspaces:

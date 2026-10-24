@@ -116,6 +116,9 @@ def validate_interfaces(folder):
 
 
 def run_mesh(folder, settings):
+    if settings.get("dimension",2)==3:
+        from cae_tetra import run_tetra
+        return run_tetra(folder,settings)
     sizes=mesh_sizes(settings)
     scale = float(settings.get('scale',1.))
     if not np.isfinite(scale) or not .5 <= scale <= 3:

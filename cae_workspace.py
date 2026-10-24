@@ -115,7 +115,7 @@ def configuration_panel(kind,defaults,c,t,allow_restore=True):
                 except (ValueError,TypeError,KeyError) as ex:
                     st.error(str(ex)); return None
         elif key=='mesh_job':
-            meshes=[j[0] for j in read_jobs('mesh') if j[2]['state']=='completed']
+            meshes=[j[0] for j in read_jobs('mesh') if j[2]['state']=='completed' and j[1]['settings'].get('dimension',2)==2]
             chosen=st.session_state[widget]
             if chosen and chosen not in meshes:
                 st.error(t('The configured mesh run is missing or incomplete. Generate it or select another mesh.',

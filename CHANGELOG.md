@@ -4,6 +4,17 @@ All notable changes to the **TLaser** digital twin platform will be documented i
 
 ---
 
+## 2026-10-24 — Tetrahedral volume mesh
+
+* Add 3D meshing of all 15 current CAD parts using conforming six-tetrahedra
+  subdivision of a shared grid, with matching triangular material interfaces.
+* Add part filtering, cavity cutaway and edge display; export Gmsh tetrahedra
+  and Elmer 504 volume elements with 303 boundary triangles.
+* Validate 28,170 tetrahedra, 5,820 nodes and 5,920 shared-interface triangles.
+  Thirteen regression tests pass; the browser generation/cutaway workflow passes.
+* Keep volume meshes out of the existing transverse 2D solver selection.
+  This completes volume meshing; a full 3D physics solver remains future work.
+
 ## 2026-10-24 — Explicit mesh sizes and shared interfaces
 
 * Put Configure & run first and remove its configuration load/save controls.

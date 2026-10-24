@@ -37,6 +37,7 @@ class MeshUITests(unittest.TestCase):
             self.assertFalse(app.metric)
             self.assertFalse(any(b.label=='Refresh job results' for b in app.button))
             self.assertFalse(any(s.label=='Saved runs' for s in app.selectbox))
+            app.radio(key='mesh_dimension').set_value('2D').run()
             app.text_input(key='option_mesh_gmsh').set_value('missing-gmsh.exe').run()
             with patch('mesh_ui.start_job') as start:
                 app.button(key='run_mesh').click().run()
