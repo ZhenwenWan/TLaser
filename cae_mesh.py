@@ -69,13 +69,55 @@ def validate_mesh(folder, model):
         length=np.linalg.norm(segments[:,1]-segments[:,0],axis=1).sum()
         if not np.isclose(length,width,rtol=1e-8,atol=1e-9):
             raise ValueError(f'Contact {tag} has incorrect length')
-    return dict(passed=True,nodes=len(xyz),triangles=len(tri),bodies=11,
+    conformity=validate_interfaces(folder)
+    return dict(passed=True,interface_checks=conformity,nodes=len(xyz),triangles=len(tri),bodies=11,
                 min_area_um2=float(areas.min()),regions=rows,bounds_um=bounds,
                 boundary_ids=sorted(int(v) for v in set(boundary[:,1])))
 
 
+def mesh_sizes(settings):
+    keys=('min_size_um','target_size_um','max_size_um')
+    if not any(key in settings for key in keys): return None
+    values={key:settings.get(key,default) for key,default in zip(keys,(.045,.2,.65))}
+    if any(isinstance(v,bool) or not isinstance(v,(int,float)) or not np.isfinite(v) or not .005<=v<=10. for v in values.values()):
+        raise ValueError('Mesh sizes must be finite numbers in [0.005, 10] micrometers')
+    if not values['min_size_um']<=values['target_size_um']<=values['max_size_um']:
+        raise ValueError('Minimum size must be <= target size <= maximum size')
+    return values
+
+
+def validate_interfaces(folder):
+    """Every region perimeter is exported; both sides share node IDs and parents."""
+    from collections import defaultdict
+    nodes=np.loadtxt(folder/'mesh.nodes',ndmin=2)
+    if len(np.unique(np.round(nodes[:,2:5],12),axis=0))!=len(nodes):
+        raise ValueError('Coincident duplicate nodes break conforming interfaces')
+    elements=np.loadtxt(folder/'mesh.elements',dtype=int,ndmin=2)
+    edges=defaultdict(list)
+    for row in elements:
+        for a,b in ((row[3],row[4]),(row[4],row[5]),(row[5],row[3])):
+            edges[tuple(sorted((a,b)))].append((int(row[0]),int(row[1])))
+    if any(len(adj)>2 for adj in edges.values()): raise ValueError('Nonmanifold mesh edge')
+    expected={edge:adj for edge,adj in edges.items() if len(adj)==1 or adj[0][1]!=adj[1][1]}
+    boundary=np.loadtxt(folder/'mesh.boundary',dtype=int,ndmin=2)
+    seen=set();regions=set();interfaces=0
+    for row in boundary:
+        edge=tuple(sorted(row[-2:]))
+        if edge not in expected or edge in seen: raise ValueError('Invalid or duplicated region boundary element')
+        seen.add(edge);adj=expected[edge]
+        if {int(v) for v in row[2:4] if v} != {v[0] for v in adj}:
+            raise ValueError('Boundary parents do not share the same element nodes')
+        regions.update(v[1] for v in adj)
+        interfaces+=len(adj)==2
+    if seen!=set(expected) or regions!=set(elements[:,1]):
+        raise ValueError('Missing boundary elements on a material region')
+    return dict(conforming=True,boundary_elements=len(seen),shared_interface_elements=interfaces,
+                regions_with_boundaries=sorted(regions))
+
+
 def run_mesh(folder, settings):
-    scale = float(settings['scale'])
+    sizes=mesh_sizes(settings)
+    scale = float(settings.get('scale',1.))
     if not np.isfinite(scale) or not .5 <= scale <= 3:
         raise ValueError('Mesh scale must be between 0.5 and 3')
     gmsh = Path(settings['gmsh'])
@@ -86,7 +128,7 @@ def run_mesh(folder, settings):
     model = scaled_model(settings.get('lateral_scale',1.),settings.get('vertical_scale',1.))
     write_json(folder/'geometry.json',model)
     geo, msh = folder/'model.geo', folder/'model.msh'
-    mesher.write_geo(mesher.right_half_model(model), geo, scale)
+    mesher.write_geo(mesher.right_half_model(model), geo, scale, sizes)
     with (folder/'solver.log').open('w') as log:
         proc = subprocess.Popen([str(gmsh),str(geo),'-2','-format','msh2','-o',str(msh)],
             stdout=log,stderr=subprocess.STDOUT,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
@@ -106,7 +148,7 @@ def run_mesh(folder, settings):
     boundaries=mesher.boundaries_from_triangles(nodes,triangles,model)
     mesher.write_elmer_mesh(nodes,triangles,boundaries,folder/'mesh')
     report=validate_mesh(folder/'mesh',model)
-    report.update(scale=scale,geometry_scales=model['metadata']['geometry_scales'],
+    report.update(mesh_sizes_um=sizes,scale=scale,geometry_scales=model['metadata']['geometry_scales'],
                   source='Lasers Gmsh symmetric transverse mesher')
     write_json(folder/'mesh.json',report)
     with zipfile.ZipFile(folder/'mesh.zip','w',zipfile.ZIP_DEFLATED) as archive:

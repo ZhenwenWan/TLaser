@@ -15,6 +15,39 @@ The bilingual edge-emitter interface uses six concise workspaces:
 
 This is a UI reorganization, preserving existing numerical engines and saved job/configuration formats. Geometry now uses independent part dimensions (see the 2026-10-24 update below); Mesh retains separate scale settings. Visibility remains an inspection setting; the full 15-part CAD assembly is not meshed. The 3D mesh view navigates planar 2D triangles, not volume elements. Calibration still fits the physical simulator; a verified ML inverse model is not yet connected. The separate VCSEL workflow is retained.
 
+## Explicit mesh sizes and conforming interfaces (2026-10-24)
+
+Configure & run is now the first Mesh tab. Configuration import/export controls
+are removed from this UI. Three optional settings have usable defaults, in µm:
+Target size 0.200, Minimum size 0.045, Maximum size 0.650. Validation requires
+0.005 ≤ minimum ≤ target ≤ maximum ≤ 10. The target sets Gmsh point sizes;
+minimum/maximum bound its characteristic sizing field. These are requested mesh
+sizes, not guaranteed limits on every resulting edge: thin layers and geometric
+constraints can force smaller elements. Old scale-based job files remain usable.
+
+The mesher constructs each shared geometric curve once and reuses it in adjacent
+surfaces. After symmetric mesh assembly, acceptance checks rebuild edge adjacency
+from actual triangles and require every material perimeter edge to have exactly
+one exported boundary element. An interior boundary must reference both adjacent
+triangle IDs using the same two node IDs. Duplicate coincident nodes, duplicated
+or missing boundaries, incorrect parents and nonmanifold edges are rejected.
+All 11 reduced transverse regions must have boundary elements. This does not
+claim a conforming volume mesh of the 15-part CAD assembly; 2D boundaries are
+edges, not 3D faces.
+
+Nine targeted tests passed, including corrupted-boundary rejection and the UI
+order/removal checks. Two real Gmsh runs are saved in `validation/mesh_sizes`:
+
+| Target / min / max (µm) | Triangles | Boundary elements | Shared interface elements |
+| --- | --- | --- | --- |
+| 0.20 / 0.02 / 0.40 | 3240 | 556 | 382 |
+| 0.10 / 0.02 / 0.40 | 10096 | 1068 | 738 |
+
+Both passed all region-area, contact and conformity checks. Each saved request
+can be reproduced by passing its settings to `cae_mesh.run_mesh` in an isolated
+output directory with Gmsh installed. Subsequent sections describe earlier UI
+increments, superseded by the controls above.
+
 ## Focused Mesh workspace (2026-10-24)
 
 Mesh results now contain only the 2D/3D mesh view, edge visibility, expandable

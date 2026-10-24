@@ -27,8 +27,10 @@ class MeshUITests(unittest.TestCase):
         with patch('mesh_ui.read_jobs',return_value=[]),patch('cae_workspace.read_jobs',return_value=[]):
             app=AppTest.from_string(script,default_timeout=60).run()
             self.assertFalse(app.exception)
-            self.assertEqual([t.label for t in app.tabs],['Visualization & results','Configure & run'])
+            self.assertEqual([t.label for t in app.tabs],['Configure & run','Visualization & results'])
             labels=[x.label for x in app.expander]
+            self.assertNotIn('Load / save configuration',labels)
+            self.assertFalse(any(b.label=='Save configuration' for b in app.button))
             self.assertNotIn('Model details',labels)
             self.assertNotIn('Validated mesh examples',labels)
             self.assertIn('Mesh details',labels)

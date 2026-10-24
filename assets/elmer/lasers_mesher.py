@@ -136,7 +136,7 @@ def right_half_model(model: dict) -> dict:
     return half
 
 
-def write_geo(model: dict, geo_path: Path, mesh_scale: float = 1.0) -> dict:
+def write_geo(model: dict, geo_path: Path, mesh_scale: float = 1.0, mesh_sizes=None) -> dict:
     rects = model["rectangles"]
     bounds = model["metadata"]["physical_bounds_um"]
     y_values, z_values = _collect_axis_values(rects)
@@ -151,8 +151,8 @@ def write_geo(model: dict, geo_path: Path, mesh_scale: float = 1.0) -> dict:
         "Mesh.MeshSizeExtendFromBoundary = 1;",
         "Mesh.MeshSizeFromCurvature = 0;",
         "Mesh.MeshSizeFromPoints = 1;",
-        f"Mesh.CharacteristicLengthMin = {0.045 * mesh_scale:.12g};",
-        f"Mesh.CharacteristicLengthMax = {0.65 * mesh_scale:.12g};",
+        f"Mesh.CharacteristicLengthMin = {(mesh_sizes['min_size_um'] if mesh_sizes else 0.045 * mesh_scale):.12g};",
+        f"Mesh.CharacteristicLengthMax = {(mesh_sizes['max_size_um'] if mesh_sizes else 0.65 * mesh_scale):.12g};",
     ]
 
     def point_id(y: float, z: float) -> int:
@@ -166,7 +166,7 @@ def write_geo(model: dict, geo_path: Path, mesh_scale: float = 1.0) -> dict:
             point_id(y, z)
 
     for (y, z), pid in sorted(points.items(), key=lambda item: item[1]):
-        geo.append(f"Point({pid}) = {{{y:.12g}, {z:.12g}, 0, {_point_lc(y, z, mesh_scale):.12g}}};")
+        geo.append(f"Point({pid}) = {{{y:.12g}, {z:.12g}, 0, {(mesh_sizes['target_size_um'] if mesh_sizes else _point_lc(y, z, mesh_scale)):.12g}}};")
 
     def line_id(a: int, b: int) -> int:
         key = _edge_key(a, b)

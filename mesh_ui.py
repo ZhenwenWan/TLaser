@@ -20,9 +20,11 @@ def displayed_mesh(jobs):
 
 
 def preflight(settings):
-    from cae_workspace import decode_configuration
-    defaults=dict(gmsh='',scale=1.,lateral_scale=1.,vertical_scale=1.)
-    checked=decode_configuration(json.dumps(dict(schema_version=1,kind='mesh',settings=settings)),'mesh',defaults)
+    from cae_mesh import mesh_sizes
+    checked=dict(settings)
+    mesh_sizes(checked)
+    if 'scale' in checked and not .5<=checked['scale']<=3.:
+        raise ValueError('Invalid legacy element-size scale')
     path=Path(checked['gmsh']).expanduser()
     if not path.is_file():
         raise ValueError('Gmsh executable not found. Set its path before generating the mesh.')
@@ -47,16 +49,23 @@ def watch_mesh(ident,t):
 
 
 def render_mesh(c,t):
-    from cae_workspace import configuration_panel,mesh_view
+    from cae_workspace import mesh_view
     jobs=read_jobs('mesh')
     active=next((j for j in jobs if j[2]['state'] in {'queued','running'}),None)
     folder=displayed_mesh(jobs)
-    results,configure=st.tabs([t('Visualization & results','可视化与结果'),t('Configure & run','配置与运行')])
+    configure,results=st.tabs([t('Configure & run','配置与运行'),t('Visualization & results','可视化与结果')])
     with configure:
-        st.caption(t('2D transverse mesh. Smaller element-size scale gives finer elements. Geometry scales resize the reduced cross-section, independently of the full CAD dimensions.',
-                     '二维横截面网格。单元尺寸比例越小，网格越细。几何缩放改变简化横截面尺寸，独立于完整 CAD 尺寸。'))
-        defaults=dict(scale=1.,lateral_scale=1.,vertical_scale=1.,gmsh=shutil.which('gmsh') or 'C:/gmsh/gmsh.exe')
-        settings=configuration_panel('mesh',defaults,c,t,allow_restore=False)
+        st.caption(t('Element sizes in µm. Target is the ideal size; small features can require smaller elements. Shared material interfaces use identical nodes and edges.',
+                     '单元尺寸单位为 µm。目标尺寸为理想值，细小特征可能需要更小单元。材料共享界面使用相同节点与边。'))
+        settings={}
+        for key,en,cn,default in [('target_size_um','Target size','目标尺寸',.2),
+                                  ('min_size_um','Minimum size','最小尺寸',.045),
+                                  ('max_size_um','Maximum size','最大尺寸',.65)]:
+            settings[key]=st.number_input(t(en,cn)+' (µm)',.005,10.,default,.005,format='%.3f',key='mesh_'+key)
+        with st.expander(t('Mesher','网格生成器')):
+            settings['gmsh']=st.text_input(t('Gmsh executable','Gmsh 可执行程序'),
+                value=shutil.which('gmsh') or 'C:/gmsh/gmsh.exe',key='option_mesh_gmsh')
+        settings.update(lateral_scale=1.,vertical_scale=1.)
         if settings is not None:
             try:
                 model=scaled_model(settings['lateral_scale'],settings['vertical_scale'])

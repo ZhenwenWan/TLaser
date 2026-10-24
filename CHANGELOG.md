@@ -4,6 +4,16 @@ All notable changes to the **TLaser** digital twin platform will be documented i
 
 ---
 
+## 2026-10-24 — Explicit mesh sizes and shared interfaces
+
+* Put Configure & run first and remove its configuration load/save controls.
+* Replace scale inputs with target/minimum/maximum size in µm, checked before
+  launch and applied to the Gmsh size field. Preserve legacy worker settings.
+* Require boundary elements for every material region and identical node/edge
+  connectivity with correct parents across shared interfaces.
+* Passed nine tests and two real Gmsh runs; checked reports and meshes are saved
+  under validation/mesh_sizes. Full 3D CAD volume meshing remains pending.
+
 ## 2026-10-24 — Focused Mesh workflow
 
 * Simplified Mesh results to view, details and download; removed redundant
