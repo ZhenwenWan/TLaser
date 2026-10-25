@@ -1,0 +1,317 @@
+{
+  "dimension": 3,
+  "element_type": "tetrahedron",
+  "nodes": 206388,
+  "tetrahedra": 1162992,
+  "material_regions": 15,
+  "min_volume_um3": 0.00026310159161282184,
+  "boundary_triangles": 123736,
+  "shared_interface_triangles": 74240,
+  "conforming": true,
+  "regions": [
+    {
+      "part": 1,
+      "name": "InP substrate",
+      "volume_um3": 7500000.0,
+      "expected_volume_um3": 7500000.0
+    },
+    {
+      "part": 2,
+      "name": "n-InP buffer",
+      "volume_um3": 150000.0,
+      "expected_volume_um3": 150000.0
+    },
+    {
+      "part": 3,
+      "name": "n-InP lower cladding",
+      "volume_um3": 112499.99999999997,
+      "expected_volume_um3": 112500.0
+    },
+    {
+      "part": 4,
+      "name": "Lower SCH waveguide",
+      "volume_um3": 18750.0,
+      "expected_volume_um3": 18750.0
+    },
+    {
+      "part": 5,
+      "name": "MQW active region",
+      "volume_um3": 5999.999999999871,
+      "expected_volume_um3": 6000.0
+    },
+    {
+      "part": 6,
+      "name": "Upper SCH waveguide",
+      "volume_um3": 18750.0,
+      "expected_volume_um3": 18750.0
+    },
+    {
+      "part": 7,
+      "name": "p-InP ridge and cladding",
+      "volume_um3": 1575.0,
+      "expected_volume_um3": 1575.0
+    },
+    {
+      "part": 8,
+      "name": "left etched p-InP shoulder",
+      "volume_um3": 20377.49999999989,
+      "expected_volume_um3": 20377.5
+    },
+    {
+      "part": 9,
+      "name": "right etched p-InP shoulder",
+      "volume_um3": 20377.49999999989,
+      "expected_volume_um3": 20377.5
+    },
+    {
+      "part": 10,
+      "name": "left SiN isolation",
+      "volume_um3": 9037.5,
+      "expected_volume_um3": 9037.5
+    },
+    {
+      "part": 11,
+      "name": "right SiN isolation",
+      "volume_um3": 9037.5,
+      "expected_volume_um3": 9037.5
+    },
+    {
+      "part": 12,
+      "name": "top p-metal stripe",
+      "volume_um3": 360.0,
+      "expected_volume_um3": 360.00000000000006
+    },
+    {
+      "part": 13,
+      "name": "backside n-metal",
+      "volume_um3": 18749.999999999996,
+      "expected_volume_um3": 18750.0
+    },
+    {
+      "part": 14,
+      "name": "high-reflection rear facet",
+      "volume_um3": 2126.600000000332,
+      "expected_volume_um3": 2126.6
+    },
+    {
+      "part": 15,
+      "name": "anti-reflection output facet",
+      "volume_um3": 2126.600000000332,
+      "expected_volume_um3": 2126.6
+    }
+  ],
+  "sizing": {
+    "minimum_um": 0.02,
+    "target_um": 20.0,
+    "maximum_um": 40.0
+  },
+  "grading": {
+    "size_field": "continuous Lipschitz envelope",
+    "growth_slope": 0.3,
+    "max_adjacent_axis_interval_ratio": [
+      1.3530232897408065,
+      1.3767228123785078,
+      1.375028698710762
+    ]
+  },
+  "backend": "Conforming structured-grid subdivision, six tetrahedra per cuboid cell",
+  "boundary_tags": {
+    "1": [
+      1,
+      13
+    ],
+    "2": [
+      1
+    ],
+    "3": [
+      1,
+      14
+    ],
+    "4": [
+      1,
+      2
+    ],
+    "5": [
+      1,
+      15
+    ],
+    "6": [
+      2
+    ],
+    "7": [
+      2,
+      14
+    ],
+    "8": [
+      2,
+      3
+    ],
+    "9": [
+      2,
+      15
+    ],
+    "10": [
+      3
+    ],
+    "11": [
+      3,
+      14
+    ],
+    "12": [
+      3,
+      4
+    ],
+    "13": [
+      3,
+      15
+    ],
+    "14": [
+      4
+    ],
+    "15": [
+      4,
+      14
+    ],
+    "16": [
+      4,
+      5
+    ],
+    "17": [
+      4,
+      15
+    ],
+    "18": [
+      5
+    ],
+    "19": [
+      5,
+      14
+    ],
+    "20": [
+      5,
+      6
+    ],
+    "21": [
+      5,
+      15
+    ],
+    "22": [
+      6
+    ],
+    "23": [
+      6,
+      14
+    ],
+    "24": [
+      6,
+      8
+    ],
+    "25": [
+      6,
+      7
+    ],
+    "26": [
+      6,
+      9
+    ],
+    "27": [
+      6,
+      15
+    ],
+    "28": [
+      7,
+      8
+    ],
+    "29": [
+      7,
+      14
+    ],
+    "30": [
+      7
+    ],
+    "31": [
+      7,
+      12
+    ],
+    "32": [
+      7,
+      9
+    ],
+    "33": [
+      7,
+      15
+    ],
+    "34": [
+      8
+    ],
+    "35": [
+      8,
+      14
+    ],
+    "36": [
+      8,
+      10
+    ],
+    "37": [
+      8,
+      15
+    ],
+    "38": [
+      9,
+      14
+    ],
+    "39": [
+      9
+    ],
+    "40": [
+      9,
+      11
+    ],
+    "41": [
+      9,
+      15
+    ],
+    "42": [
+      10
+    ],
+    "43": [
+      10,
+      14
+    ],
+    "44": [
+      10,
+      15
+    ],
+    "45": [
+      11
+    ],
+    "46": [
+      11,
+      14
+    ],
+    "47": [
+      11,
+      15
+    ],
+    "48": [
+      12
+    ],
+    "49": [
+      12,
+      14
+    ],
+    "50": [
+      12,
+      15
+    ],
+    "51": [
+      13
+    ],
+    "52": [
+      14
+    ],
+    "53": [
+      15
+    ]
+  }
+}

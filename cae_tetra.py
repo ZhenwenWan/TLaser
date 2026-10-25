@@ -9,7 +9,7 @@ import numpy as np
 from cad_dimensions import assembly,defaults
 from cae_jobs import write_json,check_cancel
 
-MAX_TETS=250000
+MAX_TETS=1500000
 
 def sizes(settings):
     values=[settings.get(k,d) for k,d in [('min_size_um',.02),('target_size_um',20.),('max_size_um',40.)]]
@@ -23,12 +23,9 @@ def grid(settings):
     bounds=np.array([[[p['center_um'][a]-p['size_um'][a]/2,p['center_um'][a]+p['size_um'][a]/2] for a in 'xyz'] for p in model['parts']])
     axes=[]
     for axis in range(3):
-        planes=np.unique(np.round(bounds[:,axis,:].ravel(),10)); coords=[]
-        for lo,hi in zip(planes[:-1],planes[1:]):
-            n=int(math.ceil((hi-lo)/target))
-            if n>MAX_TETS: raise ValueError('Requested mesh is too fine; increase target size')
-            coords.extend(np.linspace(lo,hi,n+1)[:-1])
-        coords.append(planes[-1]);axes.append(np.array(coords))
+        from mesh_grading import graded_axis
+        planes=np.unique(np.round(bounds[:,axis,:].ravel(),10))
+        axes.append(graded_axis(planes,target))
     spans=[];count=0
     for box in bounds:
         span=[(int(np.argmin(abs(axes[a]-box[a,0]))),int(np.argmin(abs(axes[a]-box[a,1])))) for a in range(3)]
@@ -94,6 +91,8 @@ def run_tetra(folder,settings):
     v=points[tets];negative=np.linalg.det(v[:,1:]-v[:,0,None,:])<0
     tets[negative,1],tets[negative,2]=tets[negative,2].copy(),tets[negative,1].copy()
     report,faces=validate(points,tets,bodies,model);report['sizing']=dict(zip(['minimum_um','target_um','maximum_um'],sizes(settings)))
+    from mesh_grading import axis_report
+    report['grading']=axis_report(axes)
     report['backend']='Conforming structured-grid subdivision, six tetrahedra per cuboid cell'
     mesh=folder/'mesh';mesh.mkdir()
     np.savetxt(mesh/'mesh.nodes',np.column_stack((np.arange(1,len(points)+1),np.full(len(points),-1),points)),fmt=['%d','%d','%.12g','%.12g','%.12g'])

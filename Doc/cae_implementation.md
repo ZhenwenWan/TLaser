@@ -1,5 +1,58 @@
 # TLaser CAE implementation
 
+## CAD-based section meshing and continuous grading (2026-10-25)
+
+Both Mesh paths now use the same `cad_dimensions.assembly` snapshot as Geometry.
+The 2D workflow no longer uses the independent reduced 11-region geometry.
+Enter a point (x,y,z) in micrometers and a nonzero normal (nx,ny,nz). Each CAD
+cuboid is intersected with this plane; its exact convex polygon becomes a
+separate physical region retaining the original part ID. Shared edges are split
+at all adjoining vertices and reused by both parts. Parts are neither widened,
+merged nor removed to simplify meshing. Tangent-only intersections have zero
+material thickness and are excluded; a plane missing every interior is rejected.
+
+The default point (0,0,0), normal (1,0,0) is transverse: 13 intersected parts,
+250 micrometer chip width and the actual 3 micrometer ridge. Facet coatings are
+included only in cuts that intersect them. Planar mesh files use local (u,v,0)
+coordinates; section.json contains the origin and orthonormal basis to recover
+world coordinates. The viewer uses equal physical scale and offers individual
+part inspection and a world-coordinate 3D view of the section.
+
+For 2D, Gmsh uses a continuous distance-based size envelope with slope 0.3,
+clipped at the target size. Distance uses 2,000 samples per shared CAD boundary
+curve. The requested minimum/maximum constrain the background size field, not
+a strict bound on every realized triangle edge. This follows Gmsh's field-size
+semantics: https://gmsh.info/doc/texinfo/#Specifying-mesh-element-sizes.
+For 3D, a continuous axis-wise Lipschitz envelope transitions from thin features
+toward the target size. Coordinate planes are preserved exactly; interval
+redistribution limits spacing jumps at part planes to 1.4. Six tetrahedra per
+cuboid keep matching triangular faces. Thin layers remain anisotropic and can
+force spacing below the requested minimum. The default largest adjacent interval
+ratio is below 1.38. The resource limit is now 1,500,000 tetrahedra; preserving
+thin layers with gradual transitions costs substantially more than the old grid.
+
+Acceptance checks include every section part's area and element containment,
+complete conforming boundary connectivity, and volume/surface preservation for
+all 15 volume parts. Reports and requests are in validation/cad_mesh. Reproduce
+full exports with `python validate_cad_mesh.py --output tmp/cad-mesh-validation`.
+Large generated meshes stay local; version control retains validation reports.
+The reference transverse run produced 284,426 nodes / 554,615 triangles; the oblique
+run produced 291,265 nodes / 568,081 triangles. Both pass per-part containment,
+area and interface checks. The graded volume run produced 206,388 nodes /
+1,162,992 tetrahedra and 74,240 matching shared-interface triangles; its maximum
+adjacent interval ratio is 1.37673. Gmsh 4.12.2 was used for these section runs.
+Seventeen regression tests passed across the CAD mesh, tetrahedral mesh, mesh UI,
+interface and legacy mesh suites (including a changed-dimension volume run).
+The browser verified point/normal controls and individual 3 micrometer ridge
+inspection. Thin layers force many elements; the reference section runs took
+about 2.5 minutes each on this workstation.
+
+The existing transverse/coupled physics model uses a reduced 11-region map.
+New CAD section meshes are excluded from that solver selector and rejected at
+runtime rather than assigned incorrect materials. Existing compatible runs and
+bundled solver meshes remain usable. Qualifying a physics map for arbitrary CAD
+sections and a full 3D solver remains separate work.
+
 ## Tetrahedral volume meshing (2026-10-24)
 
 Mesh > Configure & run now defaults to 3D. Generate mesh snapshots the current

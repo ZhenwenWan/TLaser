@@ -1,0 +1,13 @@
+{
+  "cad_section": true,
+  "dimension": 2,
+  "cut_normal": [
+    1,
+    0,
+    0
+  ],
+  "gmsh": "C:/gmsh/gmsh.exe",
+  "target_size_um": 5.0,
+  "min_size_um": 0.045,
+  "max_size_um": 10.0
+}

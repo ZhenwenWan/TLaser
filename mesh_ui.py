@@ -25,6 +25,14 @@ def preflight(settings):
         from cae_tetra import grid
         grid(checked)
         return checked
+    if checked.get("cad_section"):
+        from cae_section import section
+        from cae_tetra import sizes
+        section(checked); sizes(checked)
+        path=Path(checked["gmsh"]).expanduser()
+        if not path.is_file(): raise ValueError("Gmsh executable not found. Set its path before generating the mesh.")
+        checked["gmsh"]=str(path.resolve())
+        return checked
     from cae_mesh import mesh_sizes
     mesh_sizes(checked)
     if 'scale' in checked and not .5<=checked['scale']<=3.:
@@ -61,21 +69,24 @@ def render_mesh(c,t):
     with configure:
         dimension=st.radio(t('Mesh dimension','网格维度'),['2D','3D'],index=1,horizontal=True,key='mesh_dimension')
         volume=dimension=='3D'
-        st.caption(t('3D tetrahedra from the current CAD parts. Shared interfaces use identical triangular faces. Thin layers may require sizes below the requested minimum.' if volume else '2D transverse triangles. Shared interfaces use identical edges.',
-                     '根据当前 CAD 部件生成三维四面体，共享界面采用相同三角面。薄层可能需要小于指定最小尺寸的单元。' if volume else '二维横截面三角形，共享界面采用相同边。'))
+        st.caption(t('3D tetrahedra from the current CAD parts. Shared interfaces use identical triangular faces. Thin layers may require sizes below the requested minimum.' if volume else '2D cut through the current CAD parts. Direction is the plane normal; coordinates are in µm.',
+                     '根据当前 CAD 部件生成三维四面体，共享界面采用相同三角面。薄层可能需要小于指定最小尺寸的单元。' if volume else '切割当前 CAD 部件生成二维网格。方向为平面法向量，坐标单位为微米。'))
         settings={'dimension':3 if volume else 2}
-        for key,en,cn,default in [('target_size_um','Target size','目标尺寸',20. if volume else .2),
+        for key,en,cn,default in [('target_size_um','Target size','目标尺寸',20. if volume else 5.),
                                   ('min_size_um','Minimum size','最小尺寸',.02 if volume else .045),
-                                  ('max_size_um','Maximum size','最大尺寸',40. if volume else .65)]:
-            settings[key]=st.number_input(t(en,cn)+' (µm)',.005,500. if volume else 10.,default,.005,format='%.3f',key=('tetra_' if volume else 'mesh_')+key)
-        if volume:
-            from cad_dimensions import defaults
-            settings['cad_dimensions']=c.get('cad_dimensions',defaults(c['geometry']['L_um']))
-        else:
+                                  ('max_size_um','Maximum size','最大尺寸',40. if volume else 10.)]:
+            settings[key]=st.number_input(t(en,cn)+' (µm)',.005,500.,default,.005,format='%.3f',key=('tetra_' if volume else 'mesh_')+key)
+        from cad_dimensions import defaults
+        settings['cad_dimensions']=c.get('cad_dimensions',defaults(c['geometry']['L_um']))
+        if not volume:
+            settings['cad_section']=True
+            st.caption(t('Cut point (x, y, z) · µm','切割点 (x, y, z) · 微米'))
+            settings['cut_point']=[col.number_input(axis,value=0.,format='%.3f',key='cut_point_'+axis) for axis,col in zip('xyz',st.columns(3))]
+            st.caption(t('Direction / plane normal (nx, ny, nz)','方向 / 平面法向量 (nx, ny, nz)'))
+            settings['cut_normal']=[col.number_input('n'+axis,value=1. if axis=='x' else 0.,format='%.3f',key='cut_normal_'+axis) for axis,col in zip('xyz',st.columns(3))]
             with st.expander(t('Mesher','网格生成器')):
                 settings['gmsh']=st.text_input(t('Gmsh executable','Gmsh 可执行程序'),
                     value=shutil.which('gmsh') or 'C:/gmsh/gmsh.exe',key='option_mesh_gmsh')
-            settings.update(lateral_scale=1.,vertical_scale=1.)
         if settings is not None:
             try:
                 if volume:
@@ -83,10 +94,9 @@ def render_mesh(c,t):
                     _,_,_,estimate=grid(settings)
                     st.caption(t(f'Estimated tetrahedra: {estimate:,}',f'预计四面体数：{estimate:,}'))
                 else:
-                    model=scaled_model(settings['lateral_scale'],settings['vertical_scale'])
-                    b=model['metadata']['physical_bounds_um']
-                    st.caption(t(f"Cross-section: {b['width_y']:.3f} × {b['height_z']:.3f} µm",
-                                 f"横截面：{b['width_y']:.3f} × {b['height_z']:.3f} µm"))
+                    from cae_section import section
+                    cut=section(settings)
+                    st.caption(t(f"Intersected CAD parts: {len(cut['polygons'])}",f"切割 CAD 部件数：{len(cut['polygons'])}"))
             except ValueError as ex:
                 st.error(str(ex))
             if st.button(t('Generate mesh','生成网格'),key='run_mesh',type='primary',disabled=active is not None):
@@ -111,6 +121,9 @@ def render_mesh(c,t):
         if folder and (folder/'tetra.npz').exists():
             from tetra_ui import tetra_view
             tetra_view(folder,t)
+        elif folder and (folder/'section.json').exists():
+            from section_ui import section_view
+            section_view(folder,t)
         else:
             mesh_view(mesh,t)
         with st.expander(t('Mesh details','网格详情')):
@@ -121,6 +134,8 @@ def render_mesh(c,t):
                 if (folder/'tetra.npz').exists():
                     st.caption(t('Volume mesh export; the current transverse solvers accept 2D meshes only.',
                                  '体网格可导出；当前横向求解器仅接受二维网格。'))
+                elif (folder/'section.json').exists():
+                    st.caption(t('CAD section export. Legacy solver material mapping is not applicable.', 'CAD 截面导出。旧求解器材料映射不适用。'))
                 else:
                     st.caption(t('Select this mesh in Simulator: ','在仿真中选择此网格：')+folder.name[:8])
             else:

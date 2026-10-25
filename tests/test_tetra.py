@@ -45,6 +45,12 @@ class TetraTests(unittest.TestCase):
                  patch('cae_elmer.job_path',return_value=job), patch('cae_elmer.subprocess.Popen') as launch:
                 with self.assertRaisesRegex(ValueError,'2D triangular mesh'): run_fields(output,settings)
                 launch.assert_not_called()
+            (output/'case').rmdir()
+            (job/'section.json').write_text('{}')
+            with patch('cae_elmer.runtime',return_value=(root,root,root/'solver.exe',root)), \
+                 patch('cae_elmer.job_path',return_value=job), patch('cae_elmer.subprocess.Popen') as launch:
+                with self.assertRaisesRegex(ValueError,'matching physics/material mapping'): run_fields(output,settings)
+                launch.assert_not_called()
 
     def test_changed_cad_and_resource_limit(self):
         d=defaults(400.);d['substrate_height']=120.

@@ -46,6 +46,8 @@ def run_fields(folder, settings, cancel_folder=None):
         mesh_folder = job_path(settings["mesh_job"])
         if json.loads((mesh_folder/'status.json').read_text())["state"] != "completed":
             raise ValueError('Selected mesh job is not complete')
+        if (mesh_folder/'section.json').exists():
+            raise ValueError('CAD section requires a matching physics/material mapping; the legacy solver uses 11 reduced regions')
         if (mesh_folder/'tetra.npz').exists():
             raise ValueError('Transverse solvers require a 2D triangular mesh, not 3D tetrahedra')
         mesh_source = mesh_folder/'mesh'

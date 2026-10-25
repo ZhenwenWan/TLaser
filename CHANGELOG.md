@@ -4,6 +4,19 @@ All notable changes to the **TLaser** digital twin platform will be documented i
 
 ---
 
+## 2026-10-25 — CAD sections and graded meshes
+
+* Configure 2D cuts by a point and plane-normal direction through the current CAD.
+* Mesh intersected parts separately with shared interface connectivity and original
+  IDs; replace the reduced geometry that caused the ridge-width discrepancy.
+* Add true-scale section views, part inspection and world-coordinate navigation.
+* Use continuous size fields in 2D and graded tetrahedral intervals in 3D,
+  preserving every CAD part plane and thin layer.
+* Keep arbitrary CAD sections out of the legacy solver's incompatible material map.
+* Add geometry, grading, invalid-plane and UI regression checks and reproducible
+  transverse, oblique and volume acceptance runs. All 17 tests passed; the default
+  graded volume contains 1,162,992 tetrahedra with adjacent spacing ratios < 1.38.
+
 ## 2026-10-24 — Tetrahedral volume mesh
 
 * Add 3D meshing of all 15 current CAD parts using conforming six-tetrahedra
