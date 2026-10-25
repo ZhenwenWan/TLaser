@@ -10,12 +10,17 @@ All notable changes to the **TLaser** digital twin platform will be documented i
 * Mesh intersected parts separately with shared interface connectivity and original
   IDs; replace the reduced geometry that caused the ridge-width discrepancy.
 * Add true-scale section views, part inspection and world-coordinate navigation.
-* Use continuous size fields in 2D and graded tetrahedral intervals in 3D,
-  preserving every CAD part plane and thin layer.
+* Define Target size as the ideal element size, with Minimum/Maximum as bounds.
+  If a part has an edge shorter than twice Target, half its shortest edge becomes
+  the local target for its short edges; each receives at least two elements in 2D
+  and 3D while part boundaries and shared faces are retained.
+* Grade sizes continuously; balance neighboring 3D axis intervals to a maximum
+  ratio of 2.0. The default 3D request estimates 2,024,256 tetrahedra.
+* A local short-edge requirement can fall below Minimum size where needed to
+  preserve the geometry and provide two elements on that edge.
 * Keep arbitrary CAD sections out of the legacy solver's incompatible material map.
 * Add geometry, grading, invalid-plane and UI regression checks and reproducible
-  transverse, oblique and volume acceptance runs. All 17 tests passed; the default
-  graded volume contains 1,162,992 tetrahedra with adjacent spacing ratios < 1.38.
+  transverse, oblique and volume acceptance runs. All 17 relevant tests passed.
 
 ## 2026-10-24 — Tetrahedral volume mesh
 

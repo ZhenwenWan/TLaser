@@ -53,14 +53,14 @@ class TetraTests(unittest.TestCase):
                 launch.assert_not_called()
 
     def test_changed_cad_and_resource_limit(self):
-        d=defaults(400.);d['substrate_height']=120.
+        d=defaults(100.);d.update(substrate_height=120.,chip_width=150.,isolation_width=60.)
         with tempfile.TemporaryDirectory() as tmp:
             folder=Path(tmp)
-            settings=dict(dimension=3,cad_dimensions=d,target_size_um=40.,min_size_um=.02,max_size_um=80.)
+            settings=dict(dimension=3,cad_dimensions=d,target_size_um=20.,min_size_um=.02,max_size_um=40.)
             self.assertEqual(preflight(settings),settings)
             self.assertEqual(run_tetra(folder,settings)[0],'completed')
             report=json.loads((folder/'mesh.json').read_text())
-            self.assertAlmostEqual(report['regions'][0]['volume_um3'],400.*250.*120.)
+            self.assertAlmostEqual(report['regions'][0]['volume_um3'],100.*150.*120.)
         with self.assertRaises(ValueError): grid(dict(target_size_um=.02,min_size_um=.01,max_size_um=.1))
 
     def test_view_cutaway(self):

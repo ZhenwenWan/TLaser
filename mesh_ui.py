@@ -71,6 +71,8 @@ def render_mesh(c,t):
         volume=dimension=='3D'
         st.caption(t('3D tetrahedra from the current CAD parts. Shared interfaces use identical triangular faces. Thin layers may require sizes below the requested minimum.' if volume else '2D cut through the current CAD parts. Direction is the plane normal; coordinates are in µm.',
                      '根据当前 CAD 部件生成三维四面体，共享界面采用相同三角面。薄层可能需要小于指定最小尺寸的单元。' if volume else '切割当前 CAD 部件生成二维网格。方向为平面法向量，坐标单位为微米。'))
+        st.caption(t('Target is the ideal element size. If a part has an edge shorter than 2× target, half its shortest edge becomes the local target for its short edges; each gets at least two elements.',
+                     '目标尺寸是理想单元尺寸。若部件存在短于目标尺寸两倍的边，则该部件最短边的一半作为其短边局部目标；每条边至少划分两个单元。'))
         settings={'dimension':3 if volume else 2}
         for key,en,cn,default in [('target_size_um','Target size','目标尺寸',20. if volume else 5.),
                                   ('min_size_um','Minimum size','最小尺寸',.02 if volume else .045),

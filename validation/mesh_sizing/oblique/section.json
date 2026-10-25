@@ -1,0 +1,604 @@
+{
+  "cad": {
+    "metadata": {
+      "name": "Parametric telecom ridge-waveguide semiconductor laser",
+      "version": "task-1.1",
+      "units": "micrometer",
+      "description": "Layered InP telecom laser geometry for simulator, mesh, and EDA development.",
+      "visual_scale": {
+        "x": 1.0,
+        "y": 1.0,
+        "z": 12.0
+      },
+      "physical_bounds_um": {
+        "length": 300.0,
+        "width": 250.0,
+        "height": 106.33
+      }
+    },
+    "parameters": {
+      "length_um": 300.0,
+      "chip_width_um": 250.0,
+      "substrate_thickness_um": 100.0,
+      "n_buffer_thickness_um": 2.0,
+      "n_cladding_thickness_um": 1.5,
+      "lower_waveguide_thickness_um": 0.25,
+      "active_mqw_thickness_um": 0.08,
+      "upper_waveguide_thickness_um": 0.25,
+      "p_cladding_thickness_um": 1.5,
+      "p_cap_thickness_um": 0.25,
+      "ridge_width_um": 3.0,
+      "ridge_etch_depth_um": 1.2,
+      "dielectric_thickness_um": 0.25,
+      "p_metal_thickness_um": 0.25,
+      "n_metal_thickness_um": 0.25,
+      "facet_coating_thickness_um": 0.08,
+      "output_window_width_um": 3.0,
+      "vertical_visual_scale": 12.0,
+      "lateral_visual_scale": 1.0
+    },
+    "parts": [
+      {
+        "name": "InP substrate",
+        "material": "InP substrate",
+        "role": "Mechanical support and n-side electrical path.",
+        "center_um": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 50.0
+        },
+        "size_um": {
+          "x": 300.0,
+          "y": 250.0,
+          "z": 100.0
+        },
+        "color": "#2f6ed3"
+      },
+      {
+        "name": "n-InP buffer",
+        "material": "n-InP buffer",
+        "role": "Defect smoothing and transition layer above substrate.",
+        "center_um": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 101.0
+        },
+        "size_um": {
+          "x": 300.0,
+          "y": 250.0,
+          "z": 2.0
+        },
+        "color": "#5aa3ff"
+      },
+      {
+        "name": "n-InP lower cladding",
+        "material": "n-InP cladding",
+        "role": "Lower optical and carrier confinement.",
+        "center_um": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 102.75
+        },
+        "size_um": {
+          "x": 300.0,
+          "y": 250.0,
+          "z": 1.5
+        },
+        "color": "#4f86f7"
+      },
+      {
+        "name": "Lower SCH waveguide",
+        "material": "InGaAsP lower SCH",
+        "role": "Separate-confinement heterostructure below active region.",
+        "center_um": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 103.625
+        },
+        "size_um": {
+          "x": 300.0,
+          "y": 250.0,
+          "z": 0.25
+        },
+        "color": "#62d2a2"
+      },
+      {
+        "name": "MQW active region",
+        "material": "InGaAsP MQW active",
+        "role": "Carrier recombination and photon generation region.",
+        "center_um": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 103.79
+        },
+        "size_um": {
+          "x": 300.0,
+          "y": 250.0,
+          "z": 0.08
+        },
+        "color": "#ff4f81"
+      },
+      {
+        "name": "Upper SCH waveguide",
+        "material": "InGaAsP upper SCH",
+        "role": "Separate-confinement heterostructure above active region.",
+        "center_um": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 103.955
+        },
+        "size_um": {
+          "x": 300.0,
+          "y": 250.0,
+          "z": 0.25
+        },
+        "color": "#62d2a2"
+      },
+      {
+        "name": "p-InP ridge and cladding",
+        "material": "p-InP ridge/cladding",
+        "role": "Narrow ridge waveguide for lateral optical and current confinement.",
+        "center_um": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 104.955
+        },
+        "size_um": {
+          "x": 300.0,
+          "y": 3.0,
+          "z": 1.75
+        },
+        "color": "#b75cff"
+      },
+      {
+        "name": "left etched p-InP shoulder",
+        "material": "p-InP ridge/cladding",
+        "role": "Etched p-cladding shoulder after ridge definition.",
+        "center_um": {
+          "x": 0.0,
+          "y": -63.25,
+          "z": 104.355
+        },
+        "size_um": {
+          "x": 300.0,
+          "y": 123.5,
+          "z": 0.55
+        },
+        "color": "#b75cff"
+      },
+      {
+        "name": "right etched p-InP shoulder",
+        "material": "p-InP ridge/cladding",
+        "role": "Etched p-cladding shoulder after ridge definition.",
+        "center_um": {
+          "x": 0.0,
+          "y": 63.25,
+          "z": 104.355
+        },
+        "size_um": {
+          "x": 300.0,
+          "y": 123.5,
+          "z": 0.55
+        },
+        "color": "#b75cff"
+      },
+      {
+        "name": "left SiN isolation",
+        "material": "SiN dielectric",
+        "role": "Current blocking and surface passivation.",
+        "center_um": {
+          "x": 0.0,
+          "y": -63.25,
+          "z": 104.755
+        },
+        "size_um": {
+          "x": 300.0,
+          "y": 120.5,
+          "z": 0.25
+        },
+        "color": "#8ed6ff"
+      },
+      {
+        "name": "right SiN isolation",
+        "material": "SiN dielectric",
+        "role": "Current blocking and surface passivation.",
+        "center_um": {
+          "x": 0.0,
+          "y": 63.25,
+          "z": 104.755
+        },
+        "size_um": {
+          "x": 300.0,
+          "y": 120.5,
+          "z": 0.25
+        },
+        "color": "#8ed6ff"
+      },
+      {
+        "name": "top p-metal stripe",
+        "material": "Au p-contact",
+        "role": "P-side current injection stripe.",
+        "center_um": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 105.955
+        },
+        "size_um": {
+          "x": 300.0,
+          "y": 4.800000000000001,
+          "z": 0.25
+        },
+        "color": "#f2b84b"
+      },
+      {
+        "name": "backside n-metal",
+        "material": "Ti/Pt/Au n-contact",
+        "role": "Backside n-side ohmic contact.",
+        "center_um": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": -0.125
+        },
+        "size_um": {
+          "x": 300.0,
+          "y": 250.0,
+          "z": 0.25
+        },
+        "color": "#c8ccd4"
+      },
+      {
+        "name": "high-reflection rear facet",
+        "material": "HR facet coating",
+        "role": "Rear facet coating for cavity feedback.",
+        "center_um": {
+          "x": -150.04,
+          "y": 0.0,
+          "z": 53.165
+        },
+        "size_um": {
+          "x": 0.08,
+          "y": 250.0,
+          "z": 106.33
+        },
+        "color": "#fafafa"
+      },
+      {
+        "name": "anti-reflection output facet",
+        "material": "AR/output facet coating",
+        "role": "Output facet coating for controlled emission.",
+        "center_um": {
+          "x": 150.04,
+          "y": 0.0,
+          "z": 53.165
+        },
+        "size_um": {
+          "x": 0.08,
+          "y": 250.0,
+          "z": 106.33
+        },
+        "color": "#ffd166"
+      }
+    ]
+  },
+  "origin": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "normal": [
+    0.9701425001453319,
+    0.19402850002906638,
+    0.14552137502179976
+  ],
+  "u": [
+    -0.1426954482463482,
+    -0.02853908964926964,
+    0.9893551078413477
+  ],
+  "v": [
+    0.19611613513818404,
+    -0.9805806756909201,
+    -3.469446951953614e-18
+  ],
+  "polygons": [
+    {
+      "body": 1,
+      "name": "InP substrate",
+      "uv": [
+        [
+          -3.0531133177191805e-16,
+          -127.4754878398196
+        ],
+        [
+          101.07594250782999,
+          -130.41722986689237
+        ],
+        [
+          101.07594250782999,
+          124.53374581274686
+        ],
+        [
+          3.0531133177191805e-16,
+          127.4754878398196
+        ]
+      ],
+      "area_um2": 25769.410160110376
+    },
+    {
+      "body": 2,
+      "name": "n-InP buffer",
+      "uv": [
+        [
+          101.07594250782999,
+          -130.41722986689237
+        ],
+        [
+          103.09746135798659,
+          -130.47606470743384
+        ],
+        [
+          103.09746135798659,
+          124.4749109722054
+        ],
+        [
+          101.07594250782999,
+          124.53374581274686
+        ]
+      ],
+      "area_um2": 515.3882032022066
+    },
+    {
+      "body": 3,
+      "name": "n-InP lower cladding",
+      "uv": [
+        [
+          103.09746135798659,
+          -130.47606470743384
+        ],
+        [
+          104.61360049560405,
+          -130.52019083783992
+        ],
+        [
+          104.61360049560405,
+          124.43078484179931
+        ],
+        [
+          103.09746135798659,
+          124.4749109722054
+        ]
+      ],
+      "area_um2": 386.54115240165765
+    },
+    {
+      "body": 4,
+      "name": "Lower SCH waveguide",
+      "uv": [
+        [
+          104.61360049560405,
+          -130.52019083783992
+        ],
+        [
+          104.86629035187362,
+          -130.5275451929076
+        ],
+        [
+          104.86629035187362,
+          124.42343048673162
+        ],
+        [
+          104.61360049560405,
+          124.43078484179931
+        ]
+      ],
+      "area_um2": 64.42352540027449
+    },
+    {
+      "body": 5,
+      "name": "MQW active region",
+      "uv": [
+        [
+          104.86629035187362,
+          -130.5275451929076
+        ],
+        [
+          104.94715110587988,
+          -130.52989858652927
+        ],
+        [
+          104.94715110587988,
+          124.42107709310997
+        ],
+        [
+          104.86629035187362,
+          124.42343048673162
+        ]
+      ],
+      "area_um2": 20.615528128088986
+    },
+    {
+      "body": 6,
+      "name": "Upper SCH waveguide",
+      "uv": [
+        [
+          104.94715110587988,
+          -130.52989858652927
+        ],
+        [
+          105.19984096214945,
+          -130.53725294159693
+        ],
+        [
+          105.19984096214945,
+          124.41372273804228
+        ],
+        [
+          104.94715110587988,
+          124.42107709310997
+        ]
+      ],
+      "area_um2": 64.42352540027449
+    },
+    {
+      "body": 7,
+      "name": "p-InP ridge and cladding",
+      "uv": [
+        [
+          105.19984096214945,
+          -4.591470955855165
+        ],
+        [
+          106.96866995603648,
+          -4.642951441328938
+        ],
+        [
+          106.96866995603648,
+          -1.5835397331732677
+        ],
+        [
+          105.19984096214945,
+          -1.532059247699494
+        ]
+      ],
+      "area_um2": 5.411576133623185
+    },
+    {
+      "body": 8,
+      "name": "left etched p-InP shoulder",
+      "uv": [
+        [
+          105.19984096214945,
+          -1.532059247699494
+        ],
+        [
+          105.75575864594252,
+          -1.5482388288483946
+        ],
+        [
+          105.75575864594252,
+          124.39754315689338
+        ],
+        [
+          105.19984096214945,
+          124.41372273804228
+        ]
+      ],
+      "area_um2": 70.01548740502042
+    },
+    {
+      "body": 9,
+      "name": "right etched p-InP shoulder",
+      "uv": [
+        [
+          105.19984096214945,
+          -130.53725294159693
+        ],
+        [
+          105.75575864594252,
+          -130.55343252274585
+        ],
+        [
+          105.75575864594252,
+          -4.607650537004065
+        ],
+        [
+          105.19984096214945,
+          -4.591470955855165
+        ]
+      ],
+      "area_um2": 70.01548740502042
+    },
+    {
+      "body": 10,
+      "name": "left SiN isolation",
+      "uv": [
+        [
+          105.75575864594252,
+          -0.018532974770558874
+        ],
+        [
+          106.00844850221209,
+          -0.025887329838240707
+        ],
+        [
+          106.00844850221209,
+          122.86048294774787
+        ],
+        [
+          105.75575864594252,
+          122.86783730281554
+        ]
+      ],
+      "area_um2": 31.05213924293229
+    },
+    {
+      "body": 11,
+      "name": "right SiN isolation",
+      "uv": [
+        [
+          105.75575864594252,
+          -129.02372666866802
+        ],
+        [
+          106.00844850221209,
+          -129.03108102373568
+        ],
+        [
+          106.00844850221209,
+          -6.144710746149583
+        ],
+        [
+          105.75575864594252,
+          -6.137356391081901
+        ]
+      ],
+      "area_um2": 31.05213924293229
+    },
+    {
+      "body": 12,
+      "name": "top p-metal stripe",
+      "uv": [
+        [
+          106.96866995603648,
+          -5.560774953775639
+        ],
+        [
+          107.22135981230606,
+          -5.568129308843321
+        ],
+        [
+          107.22135981230606,
+          -0.6730705757942484
+        ],
+        [
+          106.96866995603648,
+          -0.6657162207265667
+        ]
+      ],
+      "area_um2": 1.236931687685339
+    },
+    {
+      "body": 13,
+      "name": "backside n-metal",
+      "uv": [
+        [
+          -0.2526898562695755,
+          -127.46813348475193
+        ],
+        [
+          -3.0531133177191805e-16,
+          -127.4754878398196
+        ],
+        [
+          3.0531133177191805e-16,
+          127.4754878398196
+        ],
+        [
+          -0.2526898562695749,
+          127.4828421948873
+        ]
+      ],
+      "area_um2": 64.42352540027599
+    }
+  ]
+}

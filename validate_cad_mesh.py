@@ -12,9 +12,10 @@ if __name__=='__main__':
     args=parser.parse_args()
     for name,normal in [('transverse',[1,0,0]),('oblique',[1,.2,.15])]:
         folder=args.output/name;folder.mkdir(parents=True)
-        settings=dict(cad_section=True,dimension=2,cut_normal=normal,gmsh=args.gmsh,target_size_um=5.,min_size_um=.045,max_size_um=10.)
+        settings=dict(cad_section=True,dimension=2,cut_normal=normal,gmsh=args.gmsh,target_size_um=20.,min_size_um=.02,max_size_um=40.)
         write_json(folder/'request.json',settings)
         print(name,run_section(folder,settings),flush=True)
     folder=args.output/'volume';folder.mkdir(parents=True)
-    write_json(folder/'request.json',dict(dimension=3))
-    print('volume',run_tetra(folder,{}),flush=True)
+    settings=dict(dimension=3,target_size_um=20.,min_size_um=.02,max_size_um=40.)
+    write_json(folder/'request.json',settings)
+    print('volume',run_tetra(folder,settings),flush=True)

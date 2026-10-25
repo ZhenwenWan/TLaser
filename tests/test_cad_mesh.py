@@ -5,7 +5,7 @@ import numpy as np
 from cae_section import section,write_geo
 from cae_tetra import grid
 from cad_dimensions import defaults
-from mesh_grading import axis_report
+from mesh_grading import axis_report,MAX_INTERVAL_RATIO,edge_target
 
 class CADMeshTests(unittest.TestCase):
     def test_true_ridge_and_part_dimensions(self):
@@ -31,8 +31,14 @@ class CADMeshTests(unittest.TestCase):
 
     def test_graded_volume_preserves_planes(self):
         model,axes,spans,count=grid({})
-        self.assertLess(count,1500000)
-        self.assertLess(max(axis_report(axes)['max_adjacent_axis_interval_ratio']),1.4)
+        self.assertLess(count,2500000)
+        self.assertLess(max(axis_report(axes)['max_adjacent_axis_interval_ratio']),MAX_INTERVAL_RATIO)
+        for box,span in zip(model['parts'],spans):
+            local=edge_target(min(box['size_um'].values()),20.)
+            for i,axis in enumerate('xyz'):
+                if box['size_um'][axis]<40:
+                    expected=max(2,int(np.ceil(box['size_um'][axis]/local)))
+                    self.assertGreaterEqual(span[i][1]-span[i][0],expected)
         for part in model['parts']:
             for i,a in enumerate('xyz'):
                 for sign in (-1,1):

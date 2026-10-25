@@ -1,0 +1,521 @@
+{
+  "dimension": 2,
+  "source": "Exact CAD plane section",
+  "nodes": 387,
+  "triangles": 632,
+  "regions": [
+    {
+      "body": 1,
+      "name": "InP substrate",
+      "uv": [
+        [
+          -125.0,
+          0.0
+        ],
+        [
+          125.0,
+          0.0
+        ],
+        [
+          125.0,
+          100.0
+        ],
+        [
+          -125.0,
+          100.0
+        ]
+      ],
+      "area_um2": 24999.999999999996
+    },
+    {
+      "body": 2,
+      "name": "n-InP buffer",
+      "uv": [
+        [
+          -125.0,
+          100.0
+        ],
+        [
+          125.0,
+          100.0
+        ],
+        [
+          125.0,
+          102.0
+        ],
+        [
+          -125.0,
+          102.0
+        ]
+      ],
+      "area_um2": 500.0
+    },
+    {
+      "body": 3,
+      "name": "n-InP lower cladding",
+      "uv": [
+        [
+          -125.0,
+          102.0
+        ],
+        [
+          125.0,
+          102.0
+        ],
+        [
+          125.0,
+          103.5
+        ],
+        [
+          -125.0,
+          103.5
+        ]
+      ],
+      "area_um2": 375.0
+    },
+    {
+      "body": 4,
+      "name": "Lower SCH waveguide",
+      "uv": [
+        [
+          -125.0,
+          103.5
+        ],
+        [
+          125.0,
+          103.5
+        ],
+        [
+          125.0,
+          103.75
+        ],
+        [
+          -125.0,
+          103.75
+        ]
+      ],
+      "area_um2": 62.5
+    },
+    {
+      "body": 5,
+      "name": "MQW active region",
+      "uv": [
+        [
+          -125.0,
+          103.75
+        ],
+        [
+          125.0,
+          103.75
+        ],
+        [
+          125.0,
+          103.83
+        ],
+        [
+          -125.0,
+          103.83
+        ]
+      ],
+      "area_um2": 19.999999999999574
+    },
+    {
+      "body": 6,
+      "name": "Upper SCH waveguide",
+      "uv": [
+        [
+          -125.0,
+          103.83
+        ],
+        [
+          125.0,
+          103.83
+        ],
+        [
+          125.0,
+          104.08
+        ],
+        [
+          -125.0,
+          104.08
+        ]
+      ],
+      "area_um2": 62.5
+    },
+    {
+      "body": 7,
+      "name": "p-InP ridge and cladding",
+      "uv": [
+        [
+          -1.5,
+          104.08
+        ],
+        [
+          1.5,
+          104.08
+        ],
+        [
+          1.5,
+          105.83
+        ],
+        [
+          -1.5,
+          105.83
+        ]
+      ],
+      "area_um2": 5.25
+    },
+    {
+      "body": 8,
+      "name": "left etched p-InP shoulder",
+      "uv": [
+        [
+          -125.0,
+          104.08
+        ],
+        [
+          -1.5,
+          104.08
+        ],
+        [
+          -1.5,
+          104.63
+        ],
+        [
+          -125.0,
+          104.63
+        ]
+      ],
+      "area_um2": 67.92499999999964
+    },
+    {
+      "body": 9,
+      "name": "right etched p-InP shoulder",
+      "uv": [
+        [
+          1.5,
+          104.08
+        ],
+        [
+          125.0,
+          104.08
+        ],
+        [
+          125.0,
+          104.63
+        ],
+        [
+          1.5,
+          104.63
+        ]
+      ],
+      "area_um2": 67.92499999999964
+    },
+    {
+      "body": 10,
+      "name": "left SiN isolation",
+      "uv": [
+        [
+          -123.5,
+          104.63
+        ],
+        [
+          -3.0,
+          104.63
+        ],
+        [
+          -3.0,
+          104.88
+        ],
+        [
+          -123.5,
+          104.88
+        ]
+      ],
+      "area_um2": 30.125
+    },
+    {
+      "body": 11,
+      "name": "right SiN isolation",
+      "uv": [
+        [
+          3.0,
+          104.63
+        ],
+        [
+          123.5,
+          104.63
+        ],
+        [
+          123.5,
+          104.88
+        ],
+        [
+          3.0,
+          104.88
+        ]
+      ],
+      "area_um2": 30.125
+    },
+    {
+      "body": 12,
+      "name": "top p-metal stripe",
+      "uv": [
+        [
+          -2.4,
+          105.83
+        ],
+        [
+          2.4,
+          105.83
+        ],
+        [
+          2.4,
+          106.08
+        ],
+        [
+          -2.4,
+          106.08
+        ]
+      ],
+      "area_um2": 1.2
+    },
+    {
+      "body": 13,
+      "name": "backside n-metal",
+      "uv": [
+        [
+          -125.0,
+          -0.25
+        ],
+        [
+          125.0,
+          -0.25
+        ],
+        [
+          125.0,
+          0.0
+        ],
+        [
+          -125.0,
+          0.0
+        ]
+      ],
+      "area_um2": 62.5
+    }
+  ],
+  "boundary_tags": {
+    "1": [
+      1,
+      2
+    ],
+    "2": [
+      1
+    ],
+    "3": [
+      1,
+      13
+    ],
+    "4": [
+      2
+    ],
+    "5": [
+      2,
+      3
+    ],
+    "6": [
+      3
+    ],
+    "7": [
+      3,
+      4
+    ],
+    "8": [
+      4
+    ],
+    "9": [
+      4,
+      5
+    ],
+    "10": [
+      5
+    ],
+    "11": [
+      5,
+      6
+    ],
+    "12": [
+      6,
+      7
+    ],
+    "13": [
+      6,
+      8
+    ],
+    "14": [
+      6,
+      9
+    ],
+    "15": [
+      6
+    ],
+    "16": [
+      7
+    ],
+    "17": [
+      7,
+      12
+    ],
+    "18": [
+      7,
+      9
+    ],
+    "19": [
+      7,
+      8
+    ],
+    "20": [
+      8
+    ],
+    "21": [
+      8,
+      10
+    ],
+    "22": [
+      9
+    ],
+    "23": [
+      9,
+      11
+    ],
+    "24": [
+      10
+    ],
+    "25": [
+      11
+    ],
+    "26": [
+      12
+    ],
+    "27": [
+      13
+    ]
+  },
+  "interface_checks": {
+    "conforming": true,
+    "boundary_elements": 278,
+    "shared_interface_elements": 138,
+    "regions_with_boundaries": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+    ]
+  },
+  "size_field": "ideal target with continuous local-edge envelopes",
+  "growth_slope": 1.0,
+  "sizing_um": {
+    "minimum": 0.02,
+    "target": 20.0,
+    "maximum": 40.0
+  },
+  "short_edges_refined": 28,
+  "minimum_edge_elements": 2,
+  "local_edge_rule": "half of each CAD edge length when edge length is below twice the target; enforces at least two edge elements and may override minimum size",
+  "solver_compatible": false,
+  "part_local_targets": [
+    {
+      "body": 2,
+      "name": "n-InP buffer",
+      "shortest_edge_um": 2.0,
+      "local_target_um": 1.0,
+      "short_edges": 2
+    },
+    {
+      "body": 3,
+      "name": "n-InP lower cladding",
+      "shortest_edge_um": 1.5,
+      "local_target_um": 0.75,
+      "short_edges": 2
+    },
+    {
+      "body": 4,
+      "name": "Lower SCH waveguide",
+      "shortest_edge_um": 0.25,
+      "local_target_um": 0.125,
+      "short_edges": 2
+    },
+    {
+      "body": 5,
+      "name": "MQW active region",
+      "shortest_edge_um": 0.0799999999999983,
+      "local_target_um": 0.03999999999999915,
+      "short_edges": 2
+    },
+    {
+      "body": 6,
+      "name": "Upper SCH waveguide",
+      "shortest_edge_um": 0.25,
+      "local_target_um": 0.125,
+      "short_edges": 2
+    },
+    {
+      "body": 7,
+      "name": "p-InP ridge and cladding",
+      "shortest_edge_um": 1.75,
+      "local_target_um": 0.875,
+      "short_edges": 4
+    },
+    {
+      "body": 8,
+      "name": "left etched p-InP shoulder",
+      "shortest_edge_um": 0.5499999999999972,
+      "local_target_um": 0.2749999999999986,
+      "short_edges": 2
+    },
+    {
+      "body": 9,
+      "name": "right etched p-InP shoulder",
+      "shortest_edge_um": 0.5499999999999972,
+      "local_target_um": 0.2749999999999986,
+      "short_edges": 2
+    },
+    {
+      "body": 10,
+      "name": "left SiN isolation",
+      "shortest_edge_um": 0.25,
+      "local_target_um": 0.125,
+      "short_edges": 2
+    },
+    {
+      "body": 11,
+      "name": "right SiN isolation",
+      "shortest_edge_um": 0.25,
+      "local_target_um": 0.125,
+      "short_edges": 2
+    },
+    {
+      "body": 12,
+      "name": "top p-metal stripe",
+      "shortest_edge_um": 0.25,
+      "local_target_um": 0.125,
+      "short_edges": 4
+    },
+    {
+      "body": 13,
+      "name": "backside n-metal",
+      "shortest_edge_um": 0.25,
+      "local_target_um": 0.125,
+      "short_edges": 2
+    }
+  ]
+}

@@ -1,0 +1,281 @@
+{
+  "metadata": {
+    "name": "Parametric telecom ridge-waveguide semiconductor laser",
+    "version": "task-1.1",
+    "units": "micrometer",
+    "description": "Layered InP telecom laser geometry for simulator, mesh, and EDA development.",
+    "visual_scale": {
+      "x": 1.0,
+      "y": 1.0,
+      "z": 12.0
+    },
+    "physical_bounds_um": {
+      "length": 300.0,
+      "width": 250.0,
+      "height": 106.33
+    }
+  },
+  "parameters": {
+    "length_um": 300.0,
+    "chip_width_um": 250.0,
+    "substrate_thickness_um": 100.0,
+    "n_buffer_thickness_um": 2.0,
+    "n_cladding_thickness_um": 1.5,
+    "lower_waveguide_thickness_um": 0.25,
+    "active_mqw_thickness_um": 0.08,
+    "upper_waveguide_thickness_um": 0.25,
+    "p_cladding_thickness_um": 1.5,
+    "p_cap_thickness_um": 0.25,
+    "ridge_width_um": 3.0,
+    "ridge_etch_depth_um": 1.2,
+    "dielectric_thickness_um": 0.25,
+    "p_metal_thickness_um": 0.25,
+    "n_metal_thickness_um": 0.25,
+    "facet_coating_thickness_um": 0.08,
+    "output_window_width_um": 3.0,
+    "vertical_visual_scale": 12.0,
+    "lateral_visual_scale": 1.0
+  },
+  "parts": [
+    {
+      "name": "InP substrate",
+      "material": "InP substrate",
+      "role": "Mechanical support and n-side electrical path.",
+      "center_um": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 50.0
+      },
+      "size_um": {
+        "x": 300.0,
+        "y": 250.0,
+        "z": 100.0
+      },
+      "color": "#2f6ed3"
+    },
+    {
+      "name": "n-InP buffer",
+      "material": "n-InP buffer",
+      "role": "Defect smoothing and transition layer above substrate.",
+      "center_um": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 101.0
+      },
+      "size_um": {
+        "x": 300.0,
+        "y": 250.0,
+        "z": 2.0
+      },
+      "color": "#5aa3ff"
+    },
+    {
+      "name": "n-InP lower cladding",
+      "material": "n-InP cladding",
+      "role": "Lower optical and carrier confinement.",
+      "center_um": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 102.75
+      },
+      "size_um": {
+        "x": 300.0,
+        "y": 250.0,
+        "z": 1.5
+      },
+      "color": "#4f86f7"
+    },
+    {
+      "name": "Lower SCH waveguide",
+      "material": "InGaAsP lower SCH",
+      "role": "Separate-confinement heterostructure below active region.",
+      "center_um": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 103.625
+      },
+      "size_um": {
+        "x": 300.0,
+        "y": 250.0,
+        "z": 0.25
+      },
+      "color": "#62d2a2"
+    },
+    {
+      "name": "MQW active region",
+      "material": "InGaAsP MQW active",
+      "role": "Carrier recombination and photon generation region.",
+      "center_um": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 103.79
+      },
+      "size_um": {
+        "x": 300.0,
+        "y": 250.0,
+        "z": 0.08
+      },
+      "color": "#ff4f81"
+    },
+    {
+      "name": "Upper SCH waveguide",
+      "material": "InGaAsP upper SCH",
+      "role": "Separate-confinement heterostructure above active region.",
+      "center_um": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 103.955
+      },
+      "size_um": {
+        "x": 300.0,
+        "y": 250.0,
+        "z": 0.25
+      },
+      "color": "#62d2a2"
+    },
+    {
+      "name": "p-InP ridge and cladding",
+      "material": "p-InP ridge/cladding",
+      "role": "Narrow ridge waveguide for lateral optical and current confinement.",
+      "center_um": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 104.955
+      },
+      "size_um": {
+        "x": 300.0,
+        "y": 3.0,
+        "z": 1.75
+      },
+      "color": "#b75cff"
+    },
+    {
+      "name": "left etched p-InP shoulder",
+      "material": "p-InP ridge/cladding",
+      "role": "Etched p-cladding shoulder after ridge definition.",
+      "center_um": {
+        "x": 0.0,
+        "y": -63.25,
+        "z": 104.355
+      },
+      "size_um": {
+        "x": 300.0,
+        "y": 123.5,
+        "z": 0.55
+      },
+      "color": "#b75cff"
+    },
+    {
+      "name": "right etched p-InP shoulder",
+      "material": "p-InP ridge/cladding",
+      "role": "Etched p-cladding shoulder after ridge definition.",
+      "center_um": {
+        "x": 0.0,
+        "y": 63.25,
+        "z": 104.355
+      },
+      "size_um": {
+        "x": 300.0,
+        "y": 123.5,
+        "z": 0.55
+      },
+      "color": "#b75cff"
+    },
+    {
+      "name": "left SiN isolation",
+      "material": "SiN dielectric",
+      "role": "Current blocking and surface passivation.",
+      "center_um": {
+        "x": 0.0,
+        "y": -63.25,
+        "z": 104.755
+      },
+      "size_um": {
+        "x": 300.0,
+        "y": 120.5,
+        "z": 0.25
+      },
+      "color": "#8ed6ff"
+    },
+    {
+      "name": "right SiN isolation",
+      "material": "SiN dielectric",
+      "role": "Current blocking and surface passivation.",
+      "center_um": {
+        "x": 0.0,
+        "y": 63.25,
+        "z": 104.755
+      },
+      "size_um": {
+        "x": 300.0,
+        "y": 120.5,
+        "z": 0.25
+      },
+      "color": "#8ed6ff"
+    },
+    {
+      "name": "top p-metal stripe",
+      "material": "Au p-contact",
+      "role": "P-side current injection stripe.",
+      "center_um": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 105.955
+      },
+      "size_um": {
+        "x": 300.0,
+        "y": 4.800000000000001,
+        "z": 0.25
+      },
+      "color": "#f2b84b"
+    },
+    {
+      "name": "backside n-metal",
+      "material": "Ti/Pt/Au n-contact",
+      "role": "Backside n-side ohmic contact.",
+      "center_um": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": -0.125
+      },
+      "size_um": {
+        "x": 300.0,
+        "y": 250.0,
+        "z": 0.25
+      },
+      "color": "#c8ccd4"
+    },
+    {
+      "name": "high-reflection rear facet",
+      "material": "HR facet coating",
+      "role": "Rear facet coating for cavity feedback.",
+      "center_um": {
+        "x": -150.04,
+        "y": 0.0,
+        "z": 53.165
+      },
+      "size_um": {
+        "x": 0.08,
+        "y": 250.0,
+        "z": 106.33
+      },
+      "color": "#fafafa"
+    },
+    {
+      "name": "anti-reflection output facet",
+      "material": "AR/output facet coating",
+      "role": "Output facet coating for controlled emission.",
+      "center_um": {
+        "x": 150.04,
+        "y": 0.0,
+        "z": 53.165
+      },
+      "size_um": {
+        "x": 0.08,
+        "y": 250.0,
+        "z": 106.33
+      },
+      "color": "#ffd166"
+    }
+  ]
+}

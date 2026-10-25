@@ -1,0 +1,6 @@
+{
+  "dimension": 3,
+  "target_size_um": 20.0,
+  "min_size_um": 0.02,
+  "max_size_um": 40.0
+}

@@ -18,35 +18,38 @@ coordinates; section.json contains the origin and orthonormal basis to recover
 world coordinates. The viewer uses equal physical scale and offers individual
 part inspection and a world-coordinate 3D view of the section.
 
-For 2D, Gmsh uses a continuous distance-based size envelope with slope 0.3,
-clipped at the target size. Distance uses 2,000 samples per shared CAD boundary
-curve. The requested minimum/maximum constrain the background size field, not
-a strict bound on every realized triangle edge. This follows Gmsh's field-size
-semantics: https://gmsh.info/doc/texinfo/#Specifying-mesh-element-sizes.
-For 3D, a continuous axis-wise Lipschitz envelope transitions from thin features
-toward the target size. Coordinate planes are preserved exactly; interval
-redistribution limits spacing jumps at part planes to 1.4. Six tetrahedra per
-cuboid keep matching triangular faces. Thin layers remain anisotropic and can
-force spacing below the requested minimum. The default largest adjacent interval
-ratio is below 1.38. The resource limit is now 1,500,000 tetrahedra; preserving
-thin layers with gradual transitions costs substantially more than the old grid.
+Target size is the ideal size throughout the part. Minimum and Maximum constrain
+ordinary mesh sizes. For any part with an edge shorter than twice Target, half its
+shortest CAD edge becomes the local target for its short edges, which receive at
+least two elements. This local edge rule can override Minimum when exact geometry
+requires it. Shared curves use matching divisions. In 2D, each short edge gets a
+Gmsh distance field restricted to its owning part; the size grows continuously
+toward the ideal Target with slope 1.0. Gmsh's minimum/maximum are field constraints and do not strictly bound every
+realized triangle edge:
+https://gmsh.info/doc/texinfo/#Specifying-mesh-element-sizes.
 
-Acceptance checks include every section part's area and element containment,
-complete conforming boundary connectivity, and volume/surface preservation for
-all 15 volume parts. Reports and requests are in validation/cad_mesh. Reproduce
-full exports with `python validate_cad_mesh.py --output tmp/cad-mesh-validation`.
-Large generated meshes stay local; version control retains validation reports.
-The reference transverse run produced 284,426 nodes / 554,615 triangles; the oblique
-run produced 291,265 nodes / 568,081 triangles. Both pass per-part containment,
-area and interface checks. The graded volume run produced 206,388 nodes /
-1,162,992 tetrahedra and 74,240 matching shared-interface triangles; its maximum
-adjacent interval ratio is 1.37673. Gmsh 4.12.2 was used for these section runs.
-Seventeen regression tests passed across the CAD mesh, tetrahedral mesh, mesh UI,
-interface and legacy mesh suites (including a changed-dimension volume run).
-The browser verified point/normal controls and individual 3 micrometer ridge
-inspection. Thin layers force many elements; the reference section runs took
-about 2.5 minutes each on this workstation.
+For 3D, short coordinate-aligned CAD edges use the owning part's half-shortest-edge
+local target. A continuous axis-wise envelope transitions to Target with slope
+1.0 while preserving every part plane and shared triangular face. Neighboring
+axis intervals are balanced to a maximum ratio of 2.0. Six tetrahedra per cuboid
+cell retain conforming interfaces. The default Target of 20 µm estimates
+2,024,256 tetrahedra under the 2,500,000 element resource cap.
+Acceptance checks verify each section part's area, element containment, shared
+boundary connectivity and at least two elements on every CAD edge. The 3D run
+checks volume and complete surface area for all 15 parts, conforming interfaces,
+positive tetrahedron volumes and short-edge divisions. Requests and reports are
+saved under `validation/mesh_sizing`, including each part's shortest edge and
+effective local target. Reproduce all three runs with
+`python validate_cad_mesh.py --output tmp/cad-mesh-sizing-run`.
 
+At Target 20 µm, transverse and oblique Gmsh runs each passed with a minimum of
+two elements per CAD edge. The transverse mesh has 387 nodes / 632 triangles;
+the oblique mesh has 402 nodes / 650 triangles. The volume run generated 358,707
+nodes / 2,024,256 tetrahedra, 15 parts and 135,408 matching shared-interface
+triangles. Its minimum interval count on short edges is two; the maximum measured
+adjacent-axis ratio is 1.926. All 17 CAD-mesh, tetrahedral, UI, interface and
+legacy-mesh regression tests passed. The browser UI exposes Target as ideal size
+and the part-specific short-edge rule.
 The existing transverse/coupled physics model uses a reduced 11-region map.
 New CAD section meshes are excluded from that solver selector and rejected at
 runtime rather than assigned incorrect materials. Existing compatible runs and

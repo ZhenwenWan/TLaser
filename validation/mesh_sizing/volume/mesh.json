@@ -1,0 +1,406 @@
+{
+  "dimension": 3,
+  "element_type": "tetrahedron",
+  "nodes": 358707,
+  "tetrahedra": 2024256,
+  "material_regions": 15,
+  "min_volume_um3": 9.36221233997101e-06,
+  "boundary_triangles": 219744,
+  "shared_interface_triangles": 135408,
+  "conforming": true,
+  "regions": [
+    {
+      "part": 1,
+      "name": "InP substrate",
+      "volume_um3": 7500000.000000001,
+      "expected_volume_um3": 7500000.0
+    },
+    {
+      "part": 2,
+      "name": "n-InP buffer",
+      "volume_um3": 149999.99999999997,
+      "expected_volume_um3": 150000.0
+    },
+    {
+      "part": 3,
+      "name": "n-InP lower cladding",
+      "volume_um3": 112500.0,
+      "expected_volume_um3": 112500.0
+    },
+    {
+      "part": 4,
+      "name": "Lower SCH waveguide",
+      "volume_um3": 18750.000000000004,
+      "expected_volume_um3": 18750.0
+    },
+    {
+      "part": 5,
+      "name": "MQW active region",
+      "volume_um3": 5999.999999999874,
+      "expected_volume_um3": 6000.0
+    },
+    {
+      "part": 6,
+      "name": "Upper SCH waveguide",
+      "volume_um3": 18750.000000000004,
+      "expected_volume_um3": 18750.0
+    },
+    {
+      "part": 7,
+      "name": "p-InP ridge and cladding",
+      "volume_um3": 1575.0000000000005,
+      "expected_volume_um3": 1575.0
+    },
+    {
+      "part": 8,
+      "name": "left etched p-InP shoulder",
+      "volume_um3": 20377.499999999894,
+      "expected_volume_um3": 20377.5
+    },
+    {
+      "part": 9,
+      "name": "right etched p-InP shoulder",
+      "volume_um3": 20377.499999999894,
+      "expected_volume_um3": 20377.5
+    },
+    {
+      "part": 10,
+      "name": "left SiN isolation",
+      "volume_um3": 9037.500000000002,
+      "expected_volume_um3": 9037.5
+    },
+    {
+      "part": 11,
+      "name": "right SiN isolation",
+      "volume_um3": 9037.500000000004,
+      "expected_volume_um3": 9037.5
+    },
+    {
+      "part": 12,
+      "name": "top p-metal stripe",
+      "volume_um3": 360.00000000000017,
+      "expected_volume_um3": 360.00000000000006
+    },
+    {
+      "part": 13,
+      "name": "backside n-metal",
+      "volume_um3": 18750.000000000004,
+      "expected_volume_um3": 18750.0
+    },
+    {
+      "part": 14,
+      "name": "high-reflection rear facet",
+      "volume_um3": 2126.6000000003323,
+      "expected_volume_um3": 2126.6
+    },
+    {
+      "part": 15,
+      "name": "anti-reflection output facet",
+      "volume_um3": 2126.6000000003323,
+      "expected_volume_um3": 2126.6
+    }
+  ],
+  "sizing": {
+    "minimum_um": 0.02,
+    "target_um": 20.0,
+    "maximum_um": 40.0
+  },
+  "grading": {
+    "size_field": "continuous Lipschitz envelope",
+    "growth_slope": 1.0,
+    "max_interval_ratio": 2.0,
+    "max_adjacent_axis_interval_ratio": [
+      1.8927639879648035,
+      1.9261386378855907,
+      1.9038433453195558
+    ]
+  },
+  "minimum_short_edge_intervals": 2,
+  "local_edge_rule": "each CAD edge shorter than twice target uses half-edge spacing and at least two intervals; local edge sizing may override minimum size",
+  "backend": "Conforming structured-grid subdivision, six tetrahedra per cuboid cell",
+  "boundary_tags": {
+    "1": [
+      1,
+      13
+    ],
+    "2": [
+      1
+    ],
+    "3": [
+      1,
+      14
+    ],
+    "4": [
+      1,
+      2
+    ],
+    "5": [
+      1,
+      15
+    ],
+    "6": [
+      2
+    ],
+    "7": [
+      2,
+      14
+    ],
+    "8": [
+      2,
+      3
+    ],
+    "9": [
+      2,
+      15
+    ],
+    "10": [
+      3
+    ],
+    "11": [
+      3,
+      14
+    ],
+    "12": [
+      3,
+      4
+    ],
+    "13": [
+      3,
+      15
+    ],
+    "14": [
+      4
+    ],
+    "15": [
+      4,
+      14
+    ],
+    "16": [
+      4,
+      5
+    ],
+    "17": [
+      4,
+      15
+    ],
+    "18": [
+      5
+    ],
+    "19": [
+      5,
+      14
+    ],
+    "20": [
+      5,
+      6
+    ],
+    "21": [
+      5,
+      15
+    ],
+    "22": [
+      6
+    ],
+    "23": [
+      6,
+      14
+    ],
+    "24": [
+      6,
+      8
+    ],
+    "25": [
+      6,
+      7
+    ],
+    "26": [
+      6,
+      9
+    ],
+    "27": [
+      6,
+      15
+    ],
+    "28": [
+      7,
+      8
+    ],
+    "29": [
+      7,
+      14
+    ],
+    "30": [
+      7
+    ],
+    "31": [
+      7,
+      12
+    ],
+    "32": [
+      7,
+      9
+    ],
+    "33": [
+      7,
+      15
+    ],
+    "34": [
+      8
+    ],
+    "35": [
+      8,
+      14
+    ],
+    "36": [
+      8,
+      10
+    ],
+    "37": [
+      8,
+      15
+    ],
+    "38": [
+      9,
+      14
+    ],
+    "39": [
+      9
+    ],
+    "40": [
+      9,
+      11
+    ],
+    "41": [
+      9,
+      15
+    ],
+    "42": [
+      10
+    ],
+    "43": [
+      10,
+      14
+    ],
+    "44": [
+      10,
+      15
+    ],
+    "45": [
+      11
+    ],
+    "46": [
+      11,
+      14
+    ],
+    "47": [
+      11,
+      15
+    ],
+    "48": [
+      12
+    ],
+    "49": [
+      12,
+      14
+    ],
+    "50": [
+      12,
+      15
+    ],
+    "51": [
+      13
+    ],
+    "52": [
+      14
+    ],
+    "53": [
+      15
+    ]
+  },
+  "part_local_targets": [
+    {
+      "name": "n-InP buffer",
+      "shortest_edge_um": 2.0,
+      "local_target_um": 1.0,
+      "short_edges": 4
+    },
+    {
+      "name": "n-InP lower cladding",
+      "shortest_edge_um": 1.5,
+      "local_target_um": 0.75,
+      "short_edges": 4
+    },
+    {
+      "name": "Lower SCH waveguide",
+      "shortest_edge_um": 0.25,
+      "local_target_um": 0.125,
+      "short_edges": 4
+    },
+    {
+      "name": "MQW active region",
+      "shortest_edge_um": 0.08,
+      "local_target_um": 0.04,
+      "short_edges": 4
+    },
+    {
+      "name": "Upper SCH waveguide",
+      "shortest_edge_um": 0.25,
+      "local_target_um": 0.125,
+      "short_edges": 4
+    },
+    {
+      "name": "p-InP ridge and cladding",
+      "shortest_edge_um": 1.75,
+      "local_target_um": 0.875,
+      "short_edges": 8
+    },
+    {
+      "name": "left etched p-InP shoulder",
+      "shortest_edge_um": 0.55,
+      "local_target_um": 0.275,
+      "short_edges": 4
+    },
+    {
+      "name": "right etched p-InP shoulder",
+      "shortest_edge_um": 0.55,
+      "local_target_um": 0.275,
+      "short_edges": 4
+    },
+    {
+      "name": "left SiN isolation",
+      "shortest_edge_um": 0.25,
+      "local_target_um": 0.125,
+      "short_edges": 4
+    },
+    {
+      "name": "right SiN isolation",
+      "shortest_edge_um": 0.25,
+      "local_target_um": 0.125,
+      "short_edges": 4
+    },
+    {
+      "name": "top p-metal stripe",
+      "shortest_edge_um": 0.25,
+      "local_target_um": 0.125,
+      "short_edges": 8
+    },
+    {
+      "name": "backside n-metal",
+      "shortest_edge_um": 0.25,
+      "local_target_um": 0.125,
+      "short_edges": 4
+    },
+    {
+      "name": "high-reflection rear facet",
+      "shortest_edge_um": 0.08,
+      "local_target_um": 0.04,
+      "short_edges": 4
+    },
+    {
+      "name": "anti-reflection output facet",
+      "shortest_edge_um": 0.08,
+      "local_target_um": 0.04,
+      "short_edges": 4
+    }
+  ]
+}

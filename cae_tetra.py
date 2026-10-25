@@ -9,7 +9,7 @@ import numpy as np
 from cad_dimensions import assembly,defaults
 from cae_jobs import write_json,check_cancel
 
-MAX_TETS=1500000
+MAX_TETS=2500000
 
 def sizes(settings):
     values=[settings.get(k,d) for k,d in [('min_size_um',.02),('target_size_um',20.),('max_size_um',40.)]]
@@ -23,12 +23,22 @@ def grid(settings):
     bounds=np.array([[[p['center_um'][a]-p['size_um'][a]/2,p['center_um'][a]+p['size_um'][a]/2] for a in 'xyz'] for p in model['parts']])
     axes=[]
     for axis in range(3):
-        from mesh_grading import graded_axis
+        from mesh_grading import edge_target,graded_axis
         planes=np.unique(np.round(bounds[:,axis,:].ravel(),10))
-        axes.append(graded_axis(planes,target))
+        features=[]
+        for box in bounds:
+            lo,hi=box[axis]
+            edge=hi-lo
+            local=edge_target(float(np.min(box[:,1]-box[:,0])),target)
+            if edge<2*target and local<target: features.append((lo,hi,local))
+        axes.append(graded_axis(planes,target,edge_features=features))
     spans=[];count=0
     for box in bounds:
         span=[(int(np.argmin(abs(axes[a]-box[a,0]))),int(np.argmin(abs(axes[a]-box[a,1])))) for a in range(3)]
+        for axis,(lo,hi) in enumerate(span):
+            edge=box[axis,1]-box[axis,0]
+            if edge<2*target and hi-lo<2:
+                raise ValueError('Short CAD edge received fewer than two tetrahedral mesh intervals')
         count+=6*math.prod(hi-lo for lo,hi in span);spans.append(span)
     if count>MAX_TETS: raise ValueError(f'Requested {count:,} tetrahedra exceeds {MAX_TETS:,}; increase target size')
     return model,axes,spans,count
@@ -72,6 +82,7 @@ def validate(points,tets,bodies,model):
 
 def run_tetra(folder,settings):
     model,axes,spans,count=grid(settings)
+    bounds=np.array([[[p['center_um'][a]-p['size_um'][a]/2,p['center_um'][a]+p['size_um'][a]/2] for a in 'xyz'] for p in model['parts']])
     points=[];node_ids={};tets=[];bodies=[];cells=set()
     def node(index):
         if index not in node_ids:
@@ -93,6 +104,20 @@ def run_tetra(folder,settings):
     report,faces=validate(points,tets,bodies,model);report['sizing']=dict(zip(['minimum_um','target_um','maximum_um'],sizes(settings)))
     from mesh_grading import axis_report
     report['grading']=axis_report(axes)
+    _,target,_=sizes(settings);short_edge_intervals=[]
+    part_local_targets=[]
+    for span,box in zip(spans,bounds):
+        for axis,(lo,hi) in enumerate(span):
+            if box[axis,1]-box[axis,0]<2*target: short_edge_intervals.append(hi-lo)
+    for part in model['parts']:
+        dims=part['size_um'];short_axes=[axis for axis in 'xyz' if dims[axis]<2*target]
+        if short_axes:
+            shortest=min(dims.values())
+            part_local_targets.append(dict(name=part['name'],shortest_edge_um=shortest,
+                local_target_um=shortest/2,short_edges=4*len(short_axes)))
+    report['minimum_short_edge_intervals']=min(short_edge_intervals)
+    report['part_local_targets']=part_local_targets
+    report['local_edge_rule']='for each part with short edges, half its shortest CAD edge is the local target for its short edges; enforce at least two intervals and allow local override of minimum size'
     report['backend']='Conforming structured-grid subdivision, six tetrahedra per cuboid cell'
     mesh=folder/'mesh';mesh.mkdir()
     np.savetxt(mesh/'mesh.nodes',np.column_stack((np.arange(1,len(points)+1),np.full(len(points),-1),points)),fmt=['%d','%d','%.12g','%.12g','%.12g'])
