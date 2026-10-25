@@ -57,13 +57,19 @@ def boundary_faces(tets,bodies):
 def validate(points,tets,bodies,model):
     if not np.isfinite(points).all() or len(np.unique(np.round(points,10),axis=0))!=len(points):
         raise ValueError('Invalid or duplicate mesh nodes')
+    expected_bodies=set(range(1,len(model['parts'])+1))
+    actual_bodies=set(int(body) for body in np.unique(bodies))
+    if actual_bodies!=expected_bodies:
+        missing=sorted(expected_bodies-actual_bodies)
+        raise ValueError(f'Every CAD part must contain volume elements; missing parts: {missing}')
     v=points[tets]; volumes=np.linalg.det(v[:,1:]-v[:,0,None,:])/6
     if np.any(volumes<=0): raise ValueError('Nonpositive tetrahedron volume')
     rows=[]
     for i,part in enumerate(model['parts'],1):
         expected=math.prod(part['size_um'].values());actual=float(volumes[bodies==i].sum())
         if not np.isclose(actual,expected,rtol=1e-7,atol=1e-8): raise ValueError(f'Incorrect material volume: {i}')
-        rows.append(dict(part=i,name=part['name'],volume_um3=actual,expected_volume_um3=expected))
+        rows.append(dict(part=i,name=part['name'],tetrahedra=int(np.count_nonzero(bodies==i)),
+                         volume_um3=actual,expected_volume_um3=expected))
     faces=boundary_faces(tets,bodies);present=set();shared=0
     for face,parents in faces:
         present.update(int(bodies[p]) for p in parents);shared+=len(parents)==2

@@ -9,15 +9,20 @@ def tetra_view(folder,t):
     with np.load(folder/'tetra.npz',allow_pickle=False) as data:
         points,tets,bodies=data['points'],data['tetrahedra'],data['bodies']
     parts=json.loads((folder/'geometry.json').read_text())['parts']
-    selected=st.selectbox(t('Mesh view','网格视图'),[0]+list(range(1,16)),
-        format_func=lambda i:t('All parts','全部部件') if i==0 else parts[i-1]['name'],key='tetra_part')
+    visible=st.multiselect(t('Visible parts','可见部件'),list(range(1,len(parts)+1)),
+        default=list(range(1,len(parts)+1)),format_func=lambda i:parts[i-1]['name'],key='tetra_visible_parts')
     cut=st.slider(t('Cavity cutaway (%)','腔长剖切 (%)'),1,100,100,key='tetra_cut')
     edges=st.toggle(t('Element edges','单元边线'),value=True,key='tetra_edges')
     centroid=points[tets].mean(axis=1)
     keep=centroid[:,0]<=points[:,0].min()+np.ptp(points[:,0])*cut/100
-    if selected: keep&=bodies==selected
+    keep&=np.isin(bodies,visible)
     if not keep.any():
-        st.info(t('No elements in this slice. Increase the cutaway fraction.','此剖切范围无单元，请增大比例。'));return
+        if not visible:
+            st.info(t('No parts are visible. Select one or more parts to display the mesh.',
+                      '当前没有可见部件。请选择一个或多个部件以显示网格。'))
+        else:
+            st.info(t('No elements in this slice. Increase the cutaway fraction.','此剖切范围无单元，请增大比例。'))
+        return
     subset=tets[keep];labels=bodies[keep];faces=boundary_faces(subset,labels)
     triangles=np.array([face for face,_ in faces]);values=[int(labels[parents[0]]) for _,parents in faces]
     fig=go.Figure(go.Mesh3d(x=points[:,0],y=points[:,1],z=points[:,2],

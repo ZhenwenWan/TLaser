@@ -126,7 +126,11 @@ def finish_section(folder,model,settings):
     points=np.array([nodes[i] for i in ids]);tets=np.array([[lookup[n] for n in t['nodes']] for t in tri]);bodies=np.array([t['body_id'] for t in tri])
     areas=abs(cross2(points[tets[:,1],:2]-points[tets[:,0],:2],points[tets[:,2],:2]-points[tets[:,0],:2]))/2
     if not np.isfinite(points).all() or np.any(areas<=0): raise ValueError('Invalid section elements')
-    if set(bodies)!=set(p['body'] for p in model['polygons']): raise ValueError('Missing or unexpected section regions')
+    expected_bodies=set(p['body'] for p in model['polygons'])
+    actual_bodies=set(int(body) for body in np.unique(bodies))
+    if actual_bodies!=expected_bodies:
+        missing=sorted(expected_bodies-actual_bodies)
+        raise ValueError(f'Every intersected CAD part must contain section elements; missing parts: {missing}')
     for p in model['polygons']:
         if not np.isclose(areas[bodies==p['body']].sum(),p['area_um2'],rtol=1e-7): raise ValueError('Section part area mismatch')
         # Convex polygon containment, including every triangle vertex.
@@ -163,7 +167,9 @@ def finish_section(folder,model,settings):
         if short_count:
             local_targets.append(dict(body=p['body'],name=p['name'],shortest_edge_um=float(edge_lengths.min()),
                                       local_target_um=float(edge_lengths.min()/2),short_edges=short_count))
-    report=dict(dimension=2,source='Exact CAD plane section',nodes=len(points),triangles=len(tets),regions=model['polygons'],boundary_tags={str(v):list(k) for k,v in tags.items()},interface_checks=validate_interfaces(mesh),size_field='ideal target with continuous local-edge envelopes',growth_slope=GROWTH_SLOPE,sizing_um=dict(minimum=minimum,target=target,maximum=maximum),short_edges_refined=short_edges,part_local_targets=local_targets,minimum_edge_elements=minimum_edge_elements,local_edge_rule='for each part with a short edge, use half its shortest CAD edge as the local target for its short edges; enforce at least two elements and allow local override of minimum size',solver_compatible=False)
+    short_edges_refined=sum(item['short_edges'] for item in local_targets)
+    region_counts={str(p['body']):int(np.count_nonzero(bodies==p['body'])) for p in model['polygons']}
+    report=dict(dimension=2,source='Exact CAD plane section',nodes=len(points),triangles=len(tets),regions=model['polygons'],elements_by_region=region_counts,boundary_tags={str(v):list(k) for k,v in tags.items()},interface_checks=validate_interfaces(mesh),size_field='ideal target with continuous local-edge envelopes',growth_slope=GROWTH_SLOPE,sizing_um=dict(minimum=minimum,target=target,maximum=maximum),short_edges_refined=short_edges_refined,part_local_targets=local_targets,minimum_edge_elements=minimum_edge_elements,local_edge_rule='for each part with a short edge, use half its shortest CAD edge as the local target for its short edges; enforce at least two elements and allow local override of minimum size',solver_compatible=False)
     write_json(folder/'mesh.json',report)
     with zipfile.ZipFile(folder/'mesh.zip','w',zipfile.ZIP_DEFLATED) as archive:
         for path in mesh.iterdir():archive.write(path,'mesh/'+path.name)
